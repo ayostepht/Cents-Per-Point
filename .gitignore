@@ -1,0 +1,22 @@
+# Node
+backend/node_modules/
+frontend/node_modules/
+
+# Build
+frontend/build/
+backend/data/
+
+# Dependency lock files
+backend/package-lock.json
+frontend/package-lock.json
+
+# Environment files
+.env
+.env.*
+
+# Editor settings
+.vscode/
+.DS_Store
+
+# Local scripts
+dev.sh

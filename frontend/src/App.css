@@ -1,0 +1,172 @@
+:root {
+  --sky-blue: #8ecae6;
+  --blue-green: #219ebc;
+  --prussian-blue: #023047;
+  --selective-yellow: #ffb703;
+  --ut-orange: #fb8500;
+
+  --primary: var(--blue-green);
+  --accent: var(--sky-blue);
+  --danger: var(--ut-orange);
+  --success: var(--selective-yellow);
+  --warning: var(--selective-yellow);
+  --bg: #f7fafc;
+  --card-bg: #fff;
+  --border: #e6e6e6;
+  --text: var(--prussian-blue);
+  --muted: #888;
+  --radius: 12px;
+  --shadow: 0 2px 12px #8ecae644;
+  --font: 'Inter', 'Nunito', system-ui, sans-serif;
+  --heading-accent: linear-gradient(90deg, var(--sky-blue) 0%, var(--blue-green) 40%, var(--prussian-blue) 70%, var(--selective-yellow) 85%, var(--ut-orange) 100%);
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+}
+
+nav {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  font-size: 1.1rem;
+}
+nav a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  transition: background 0.2s, color 0.2s;
+}
+nav a:hover {
+  background: var(--ut-orange);
+  color: #fff;
+}
+
+h2, h3 {
+  font-family: var(--font);
+  font-weight: 900;
+  letter-spacing: -1px;
+  background: var(--heading-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card, .dashboard-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+button {
+  font-family: var(--font);
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary) 60%, var(--accent) 100%);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, filter 0.2s;
+  box-shadow: 0 2px 8px #219ebc33;
+  margin-right: 4px;
+  filter: brightness(1.05);
+}
+button:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+  filter: none;
+}
+button:hover:not(:disabled) {
+  background: linear-gradient(90deg, var(--ut-orange) 0%, var(--primary) 100%);
+  filter: brightness(1.15);
+}
+
+/* Action button variants */
+button[style*='color: red'], .btn-danger {
+  background: linear-gradient(90deg, var(--danger) 60%, #ffb703 100%);
+  color: #fff !important;
+}
+button[style*='color: green'], .btn-success {
+  background: linear-gradient(90deg, var(--success) 60%, #ffe066 100%);
+  color: #fff !important;
+}
+button[style*='color: blue'], .btn-edit {
+  background: linear-gradient(90deg, var(--sky-blue) 60%, var(--blue-green) 100%);
+  color: #fff !important;
+}
+button[style*='color: gray'], .btn-cancel {
+  background: linear-gradient(90deg, #d9d9d9 60%, #bfbfbf 100%);
+  color: #444 !important;
+}
+
+input, select, textarea {
+  font-family: var(--font);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  font-size: 1rem;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  background: #fafdff;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue-green);
+  outline: none;
+  box-shadow: 0 0 0 2px #219ebc22;
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+th, td {
+  padding: 12px 10px;
+  text-align: left;
+}
+th {
+  background: #e6f7ff;
+  color: var(--primary);
+  font-weight: 800;
+  border-bottom: 2px solid var(--border);
+}
+tbody tr:nth-child(even) {
+  background: #f7fbff;
+}
+tbody tr:hover {
+  background: #8ecae655;
+}
+
+/* Add row and edit row highlight */
+tr[style*='background: #e6f7ff'] {
+  background: #e6f7ff !important;
+}
+tr[style*='background: #f9f9f9'] {
+  background: #f9f9f9 !important;
+}
+
+/* Misc */
+::-webkit-scrollbar {
+  width: 8px;
+  background: #f0f7ff;
+}
+::-webkit-scrollbar-thumb {
+  background: #e6e6e6;
+  border-radius: 8px;
+} 
