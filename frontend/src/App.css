@@ -18,7 +18,7 @@
   --radius: 12px;
   --shadow: 0 2px 12px #8ecae644;
   --font: 'Inter', 'Nunito', system-ui, sans-serif;
-  --heading-accent: linear-gradient(90deg, var(--sky-blue) 0%, var(--blue-green) 40%, var(--prussian-blue) 70%, var(--selective-yellow) 85%, var(--ut-orange) 100%);
+  /* --heading-accent removed for clean headings */
 }
 
 body {
@@ -51,10 +51,8 @@ h2, h3 {
   font-family: var(--font);
   font-weight: 900;
   letter-spacing: -1px;
-  background: var(--heading-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
+  background: none;
 }
 
 .card, .dashboard-card {

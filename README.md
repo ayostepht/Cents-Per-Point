@@ -1,6 +1,6 @@
-# Cost Per Point
+# Cents Per Point
 
-A self-hosted web application to track and visualize credit card point redemptions, helping you understand and optimize your Cost Per Point (CPP).
+A self-hosted web application to track and visualize credit card point redemptions, helping you understand and optimize your Cents Per Point (CPP).
 
 ## Overview
 - **Backend:** Node.js (Express, SQLite)
@@ -30,8 +30,15 @@ services:
     ports:
       - "3000:3000" #UI Port
 ```
+
+1. Save the above as `docker-compose.yml` in an empty directory.
+2. Run:
+   ```sh
+   docker-compose up
+   ```
 Access the app at [http://localhost:3000](http://localhost:3000)
 
+> **Note:** This will pull pre-built images from Docker Hub (`stephtanner1/cpp-backend:latest` and `stephtanner1/cpp-frontend:latest`).
 
 ---
 

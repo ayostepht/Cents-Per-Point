@@ -233,7 +233,7 @@ export default function Redemptions() {
 
   return (
     <div>
-      <h2>Redemption History</h2>
+      <h2>Redemptions</h2>
       <div style={{ marginBottom: 16 }}>
         <label>Source: 
           <select name="source" value={filters.source} onChange={e => setFilters(f => ({ ...f, source: e.target.value }))} style={{ marginRight: 8 }}>
