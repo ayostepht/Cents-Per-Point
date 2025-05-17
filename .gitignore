@@ -20,3 +20,6 @@ frontend/package-lock.json
 
 # Local scripts
 dev.sh
+
+# GitHub Actions workflows
+# (Workflow YAMLs are tracked; do not store secrets in this directory)

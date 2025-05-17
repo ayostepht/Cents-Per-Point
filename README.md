@@ -6,7 +6,7 @@ A self-hosted web application to track and visualize credit card point redemptio
 - **Backend:** Node.js (Express, SQLite)
 - **Frontend:** React
 - **Database:** SQLite (local file)
-- **Deployment:** Docker Compose
+- **Deployment:** Docker Compose or Docker CLI
 
 ## Features
 - Add and view point redemptions (date, source, points, value, notes)
@@ -15,24 +15,37 @@ A self-hosted web application to track and visualize credit card point redemptio
 
 ## Quick Start
 
-### Prerequisites
-- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+### Docker Compose
+Use the following `docker-compose.yml`:
 
-### Setup
-1. Clone this repository:
+```yaml
+version: '3.8'
+services:
+  backend:
+    image: stephtanner1/cpp-backend:latest
+    ports:
+      - "5000:5000" #API & 
+  frontend:
+    image: stephtanner1/cpp-frontend:latest
+    ports:
+      - "3000:3000" #UI Port
+```
+Access the app at [http://localhost:3000](http://localhost:3000)
+
+
+---
+
+### Docker CLI
+If you prefer to use Docker directly without Compose:
+1. Run the backend:
    ```sh
-   git clone https://github.com/yourusername/cost-per-point.git
-   cd cost-per-point
+   docker run -d --name cpp-backend -p 5000:5000 stephtanner1/cpp-backend:latest
    ```
-2. Build and start the app:
+2. Run the frontend:
    ```sh
-   docker-compose up --build
+   docker run -d --name cpp-frontend -p 3000:3000 stephtanner1/cpp-frontend:latest
    ```
 3. Access the app at [http://localhost:3000](http://localhost:3000)
-
-## Development
-- Backend code: `backend/`
-- Frontend code: `frontend/`
 
 ---
 
