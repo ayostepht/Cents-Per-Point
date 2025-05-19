@@ -2,6 +2,15 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 
+// Get API base URL dynamically based on current window location
+const getApiBaseUrl = () => {
+  const { protocol, hostname } = window.location;
+  // If running on port 3333, use port 5000 for API
+  return `${protocol}//${hostname}:5000`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
 const columns = [
@@ -91,7 +100,7 @@ export default function Redemptions() {
 
   const fetchRedemptions = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/redemptions')
+    axios.get(`${API_BASE_URL}/api/redemptions`)
       .then(res => {
         setRedemptions(res.data);
         setLoading(false);
@@ -110,7 +119,7 @@ export default function Redemptions() {
     if (!window.confirm('Are you sure you want to delete this redemption?')) return;
     setDeleting(id);
     try {
-      await axios.delete(`http://localhost:5000/api/redemptions/${id}`);
+      await axios.delete(`${API_BASE_URL}/api/redemptions/${id}`);
       fetchRedemptions();
     } finally {
       setDeleting(null);
@@ -134,7 +143,7 @@ export default function Redemptions() {
   };
 
   const handleEditSave = async id => {
-    await axios.put(`http://localhost:5000/api/redemptions/${id}`, {
+    await axios.put(`${API_BASE_URL}/api/redemptions/${id}`, {
       date: editForm.date,
       source: editForm.source,
       points: Number(editForm.points),
@@ -169,7 +178,7 @@ export default function Redemptions() {
       alert('Please complete the following required fields: ' + missingFields.map(f => f.label).join(', '));
       return;
     }
-    await axios.post('http://localhost:5000/api/redemptions', {
+    await axios.post(`${API_BASE_URL}/api/redemptions`, {
       date: addForm.date,
       source: addForm.source,
       points: Number(addForm.points),
