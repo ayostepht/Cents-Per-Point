@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - beta
 
 jobs:
   build-and-push:
@@ -24,16 +25,34 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build and push backend image (main)
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
 
-      - name: Build and push frontend image
+      - name: Build and push backend image (beta)
+        if: github.ref == 'refs/heads/beta'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:beta
+
+      - name: Build and push frontend image (main)
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest 
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
+
+      - name: Build and push frontend image (beta)
+        if: github.ref == 'refs/heads/beta'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta 
