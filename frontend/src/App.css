@@ -1,170 +1,373 @@
+/* --- Variables --- */
 :root {
-  --sky-blue: #8ecae6;
-  --blue-green: #219ebc;
-  --prussian-blue: #023047;
-  --selective-yellow: #ffb703;
-  --ut-orange: #fb8500;
+  /* Refined Colors */
+  --dark-blue: #023047; /* Stays as text color */
+  --primary-blue: #219ebc; /* Stays as primary */
+  --light-blue: #8ecae6; /* Stays as accent */
+  --ut-orange: #fb8500; /* Stays for danger/warning */
+  --selective-yellow: #ffb703; /* Stays for success */
 
-  --primary: var(--blue-green);
-  --accent: var(--sky-blue);
+  /* Neutral Palette (Added/Refined) */
+  --gray-900: #1a202c; /* Very dark gray */
+  --gray-700: #4a5568; /* Dark gray */
+  --gray-500: #718096; /* Medium gray (Good for muted text) */
+  --gray-300: #cbd5e0; /* Light gray (Good for borders) */
+  --gray-100: #f7fafc; /* Very light gray (Good for backgrounds) */
+  --white: #fff;
+
+  /* Variable Mapping */
+  --primary: var(--primary-blue);
+  --accent: var(--light-blue);
   --danger: var(--ut-orange);
   --success: var(--selective-yellow);
-  --warning: var(--selective-yellow);
-  --bg: #f7fafc;
-  --card-bg: #fff;
-  --border: #e6e6e6;
-  --text: var(--prussian-blue);
-  --muted: #888;
-  --radius: 12px;
-  --shadow: 0 2px 12px #8ecae644;
-  --font: 'Inter', 'Nunito', system-ui, sans-serif;
-  /* --heading-accent removed for clean headings */
+  --warning: var(--selective-yellow); /* Keep warning same as success for now */
+
+  --bg: var(--gray-100); /* Use light gray for background */
+  --card-bg: var(--white); /* Use pure white for cards */
+  --border: var(--gray-300); /* Use light gray for borders */
+  --text: var(--dark-blue); /* Dark blue for main text */
+  --muted: var(--gray-500); /* Medium gray for muted text */
+
+  /* Spacing Scale (Added for consistency) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Typography (Font remains, adjust weights/sizes in specific elements) */
+  --font: 'Inter', system-ui, sans-serif; /* Simplified font stack */
+
+  /* Border Radius (Slightly reduced for cleaner look, or keep 12px if you prefer) */
+  --radius: 8px; /* Reduced from 12px */
+  --radius-sm: 4px; /* Smaller radius for buttons/inputs */
+
+  /* Shadow (Refined for a cleaner look) */
+  /* Softer, less colored shadow */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  /* Slightly larger shadow for cards */
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* Keep a slightly stronger shadow for emphasis if needed, maybe for modals etc. */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
 }
 
+/* --- Base Styles --- */
 body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
   margin: 0;
+  line-height: 1.6; /* Improved readability */
 }
 
+/* --- Typography --- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font);
+  font-weight: 800; /* Slightly reduced from 900 for better readability in some cases */
+  letter-spacing: -0.5px; /* Tighter letter spacing for bold headlines */
+  color: var(--text); /* Headings now use text color for cleaner look */
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-md);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+/* Add styles for h5, h6 if needed */
+
+p {
+    margin-bottom: var(--space-md); /* Consistent spacing below paragraphs */
+}
+
+/* --- Navigation --- */
 nav {
   background: var(--card-bg);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  font-size: 1.1rem;
+  box-shadow: var(--shadow-sm); /* Use the softer shadow */
+  font-size: 1rem; /* Slightly reduced font size for navigation */
+  padding: var(--space-md) var(--space-lg); /* Add padding to nav container */
 }
+
+nav ul { /* Assuming nav contains a ul for links */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Example: flex for horizontal nav */
+  gap: var(--space-md); /* Space between nav items */
+}
+
 nav a {
-  color: var(--primary);
+  color: var(--muted); /* Muted color for default links */
   text-decoration: none;
-  font-weight: 700;
-  padding: 8px 12px;
-  border-radius: var(--radius);
+  font-weight: 600; /* Slightly less bold than buttons */
+  padding: var(--space-sm) var(--space-md); /* Use spacing variables */
+  border-radius: var(--radius-sm); /* Smaller radius for links */
   transition: background 0.2s, color 0.2s;
-}
-nav a:hover {
-  background: var(--ut-orange);
-  color: #fff;
+  display: inline-block; /* Required for padding/margin */
 }
 
-h2, h3 {
-  font-family: var(--font);
-  font-weight: 900;
-  letter-spacing: -1px;
-  color: var(--primary);
-  background: none;
+nav a:hover,
+nav a:focus {
+  background: var(--light-blue); /* Use accent color for hover */
+  color: var(--dark-blue); /* Darker text on hover */
 }
 
-.card, .dashboard-card {
+nav a.active { /* Optional: for highlighting the active link */
+    color: var(--primary);
+    font-weight: 700;
+}
+
+
+/* --- Cards --- */
+.card, .dashboard-card { /* Combined selectors */
   background: var(--card-bg);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 24px;
-  margin-bottom: 24px;
+  box-shadow: var(--shadow-md); /* Use the card shadow */
+  padding: var(--space-lg); /* Use spacing variable */
+  margin-bottom: var(--space-lg); /* Use spacing variable */
 }
 
-button {
+/* --- Buttons --- */
+button, .button { /* Add .button class for semantic use if needed */
   font-family: var(--font);
   border: none;
-  border-radius: var(--radius);
-  padding: 8px 18px;
+  border-radius: var(--radius-sm); /* Smaller radius */
+  padding: var(--space-sm) var(--space-md); /* Consistent padding */
   font-size: 1rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--primary) 60%, var(--accent) 100%);
-  color: #fff;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s, filter 0.2s;
-  box-shadow: 0 2px 8px #219ebc33;
-  margin-right: 4px;
-  filter: brightness(1.05);
+  transition: background 0.2s, box-shadow 0.2s, opacity 0.2s; /* Use opacity for disabled */
+  display: inline-flex; /* Align text/icon */
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm); /* Space between text/icon */
+  line-height: 1.2; /* Ensure consistent height */
+  text-decoration: none; /* For .button class */
 }
-button:disabled {
+
+/* Default Button Style (More solid or subtle) */
+button:not([class^="btn-"]), .button:not([class^="btn-"]) { /* Target buttons without specific btn-* classes */
+    background: var(--primary);
+    color: var(--white);
+    box-shadow: 0 2px 8px rgba(33, 158, 188, 0.3); /* Primary color shadow */
+}
+
+button:hover:not(:disabled):not([class^="btn-"]),
+.button:hover:not([class^="btn-"]) {
+    background: #1a8aa5; /* Slightly darker primary on hover */
+    box-shadow: 0 4px 12px rgba(33, 158, 188, 0.4);
+}
+
+button:focus:not(:disabled):not([class^="btn-"]),
+.button:focus:not([class^="btn-"]) { /* Add focus state */
+    outline: 2px solid var(--light-blue);
+    outline-offset: 2px;
+}
+
+
+/* Disabled state */
+button:disabled, .button:disabled {
   background: var(--border);
   color: var(--muted);
   cursor: not-allowed;
-  filter: none;
-}
-button:hover:not(:disabled) {
-  background: linear-gradient(90deg, var(--ut-orange) 0%, var(--primary) 100%);
-  filter: brightness(1.15);
+  box-shadow: none;
+  opacity: 0.7; /* Use opacity instead of filter */
 }
 
-/* Action button variants */
-button[style*='color: red'], .btn-danger {
-  background: linear-gradient(90deg, var(--danger) 60%, #ffb703 100%);
-  color: #fff !important;
+/* Action button variants (Using classes, removed inline style targeting) */
+/* Removed redundant [style*='color: ...'] selectors */
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 2px 8px rgba(33, 158, 188, 0.3);
 }
-button[style*='color: green'], .btn-success {
-  background: linear-gradient(90deg, var(--success) 60%, #ffe066 100%);
-  color: #fff !important;
+.btn-primary:hover:not(:disabled) {
+  background: #1a8aa5; /* Slightly darker primary on hover */
+  box-shadow: 0 4px 12px rgba(33, 158, 188, 0.4);
 }
-button[style*='color: blue'], .btn-edit {
-  background: linear-gradient(90deg, var(--sky-blue) 60%, var(--blue-green) 100%);
-  color: #fff !important;
-}
-button[style*='color: gray'], .btn-cancel {
-  background: linear-gradient(90deg, #d9d9d9 60%, #bfbfbf 100%);
-  color: #444 !important;
+.btn-primary:focus:not(:disabled) {
+    outline: 2px solid var(--light-blue);
+    outline-offset: 2px;
 }
 
+.btn-secondary { /* Example: Outline button */
+    background: var(--white);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    box-shadow: var(--shadow-sm);
+    padding: calc(var(--space-sm) - 2px) calc(var(--space-md) - 2px); /* Adjust padding for border */
+}
+.btn-secondary:hover:not(:disabled) {
+    background: var(--light-blue);
+    border-color: var(--light-blue);
+    color: var(--dark-blue);
+    box-shadow: var(--shadow-md);
+}
+.btn-secondary:focus:not(:disabled) {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--white);
+  box-shadow: 0 2px 8px rgba(251, 133, 0, 0.3);
+}
+.btn-danger:hover:not(:disabled) {
+  background: #d87100; /* Slightly darker orange */
+  box-shadow: 0 4px 12px rgba(251, 133, 0, 0.4);
+}
+.btn-danger:focus:not(:disabled) {
+    outline: 2px solid var(--ut-orange); /* Focus using danger color */
+    outline-offset: 2px;
+}
+
+.btn-success {
+  background: var(--success);
+  color: var(--white); /* Keep white text for contrast */
+  box-shadow: 0 2px 8px rgba(255, 183, 3, 0.3);
+}
+.btn-success:hover:not(:disabled) {
+  background: #d99c00; /* Slightly darker yellow */
+  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.4);
+}
+.btn-success:focus:not(:disabled) {
+    outline: 2px solid var(--selective-yellow); /* Focus using success color */
+    outline-offset: 2px;
+}
+
+.btn-edit { /* Using a specific class for edit */
+  background: var(--light-blue); /* Use accent for edit */
+  color: var(--dark-blue); /* Dark text on light blue */
+  box-shadow: 0 2px 8px rgba(142, 202, 230, 0.3);
+}
+.btn-edit:hover:not(:disabled) {
+    background: #7acae6; /* Slightly darker light blue */
+    box-shadow: 0 4px 12px rgba(142, 202, 230, 0.4);
+}
+.btn-edit:focus:not(:disabled) {
+    outline: 2px solid var(--light-blue);
+    outline-offset: 2px;
+}
+
+.btn-cancel {
+  background: var(--gray-300); /* Use light gray for cancel */
+  color: var(--gray-700); /* Darker gray text */
+  box-shadow: var(--shadow-sm);
+}
+.btn-cancel:hover:not(:disabled) {
+    background: var(--gray-500);
+    color: var(--white);
+    box-shadow: var(--shadow-md);
+}
+.btn-cancel:focus:not(:disabled) {
+    outline: 2px solid var(--gray-500);
+    outline-offset: 2px;
+}
+
+/* --- Form Elements --- */
 input, select, textarea {
   font-family: var(--font);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 7px 12px;
+  border: 1px solid var(--border); /* Thinner border */
+  border-radius: var(--radius-sm); /* Smaller radius */
+  padding: var(--space-sm) var(--space-md); /* Consistent padding */
   font-size: 1rem;
-  margin-top: 4px;
-  margin-bottom: 2px;
-  background: #fafdff;
-  transition: border 0.2s, box-shadow 0.2s;
-}
-input:focus, select:focus, textarea:focus {
-  border-color: var(--blue-green);
-  outline: none;
-  box-shadow: 0 0 0 2px #219ebc22;
+  margin-top: var(--space-sm); /* Use spacing variable */
+  margin-bottom: var(--space-sm); /* Use spacing variable */
+  background: var(--white); /* Pure white background */
+  color: var(--text); /* Ensure text color */
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
+  width: 100%; /* Make inputs take full width of their container */
+  max-width: 100%;
 }
 
-/* Table styles */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary); /* Use primary color for focus border */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.2); /* Primary color shadow with more spread */
+}
+
+input::placeholder, textarea::placeholder { /* Style placeholders */
+    color: var(--muted);
+    opacity: 1; /* Ensure placeholder is visible */
+}
+
+/* Optional: Style for disabled/readonly inputs */
+input:disabled, textarea:disabled,
+input[readonly], textarea[readonly] {
+    background: var(--gray-100);
+    color: var(--muted);
+    cursor: not-allowed;
+}
+
+/* --- Tables --- */
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse; /* Use collapse for cleaner lines */
+  /* Removed border-spacing */
   background: var(--card-bg);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md); /* Use card shadow */
+  margin-bottom: var(--space-lg); /* Consistent margin below table */
 }
+
 th, td {
-  padding: 12px 10px;
+  padding: var(--space-md) var(--space-sm); /* Use spacing variables, slightly less horizontal padding */
   text-align: left;
+  border-bottom: 1px solid var(--border); /* Add border between rows */
 }
+
 th {
-  background: #e6f7ff;
-  color: var(--primary);
-  font-weight: 800;
-  border-bottom: 2px solid var(--border);
+  background: var(--gray-100); /* Use light gray for header background */
+  color: var(--dark-blue); /* Dark text for header */
+  font-weight: 700; /* Slightly less bold */
+  text-transform: uppercase; /* Make header text uppercase */
+  font-size: 0.9rem; /* Smaller font size for headers */
+  letter-spacing: 0.5px;
 }
-tbody tr:nth-child(even) {
-  background: #f7fbff;
+
+tbody tr:last-child td {
+    border-bottom: none; /* Remove border from the last row */
 }
+
 tbody tr:hover {
-  background: #8ecae655;
+  background: rgba(142, 202, 230, 0.2); /* Lighter hover effect using light blue with opacity */
 }
 
-/* Add row and edit row highlight */
-tr[style*='background: #e6f7ff'] {
-  background: #e6f7ff !important;
+/* Add row and edit row highlight (Using classes now) */
+/* Removed tr[style*='...'] selectors */
+.table-row-added {
+  background: rgba(255, 183, 3, 0.1) !important; /* Success color with opacity */
 }
-tr[style*='background: #f9f9f9'] {
-  background: #f9f9f9 !important;
+.table-row-edited {
+  background: rgba(33, 158, 188, 0.1) !important; /* Primary color with opacity */
 }
 
-/* Misc */
+
+/* --- Misc --- */
+/* Keep scrollbar styles as they are */
 ::-webkit-scrollbar {
   width: 8px;
-  background: #f0f7ff;
+  background: var(--gray-100); /* Use light gray background */
 }
 ::-webkit-scrollbar-thumb {
-  background: #e6e6e6;
+  background: var(--gray-300); /* Use light gray thumb */
   border-radius: 8px;
-} 
+}
+::-webkit-scrollbar-thumb:hover { /* Add hover state */
+    background: var(--gray-500);
+}
+
+/* Basic utility classes (Optional additions) */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mb-md { margin-bottom: var(--space-md); }
+.mt-md { margin-top: var(--space-md); }
+/* Add more as needed */
+
