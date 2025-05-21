@@ -11,6 +11,7 @@ const columns = [
   { key: 'taxes', label: 'Taxes/Fees ($)' },
   { key: 'value', label: 'Total Cash Value ($)' },
   { key: 'cpp', label: 'CPP' },
+  { key: 'is_travel_credit', label: 'Free Night Award/Credit' },
   { key: 'notes', label: 'Notes' },
   { key: 'actions', label: 'Actions' }
 ];
@@ -72,7 +73,7 @@ export default function Redemptions() {
   const [filters, setFilters] = useState({ source: '', dateFrom: '', dateTo: '' });
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '' });
+  const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
 
   const location = useLocation();
 
@@ -125,22 +126,30 @@ export default function Redemptions() {
       points: r.points,
       taxes: r.taxes,
       value: r.value,
-      notes: r.notes
+      notes: r.notes,
+      is_travel_credit: !!r.is_travel_credit
     });
   };
 
   const handleEditChange = e => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setEditForm(f => {
+      if (name === 'is_travel_credit') {
+        return { ...f, is_travel_credit: checked, points: checked && (!f.points || f.points === '') ? 0 : f.points };
+      }
+      return { ...f, [name]: type === 'checkbox' ? checked : value };
+    });
   };
 
   const handleEditSave = async id => {
     await axios.put(`http://localhost:5000/api/redemptions/${id}`, {
       date: editForm.date,
       source: editForm.source,
-      points: Number(editForm.points),
+      points: editForm.is_travel_credit ? 0 : Number(editForm.points),
       value: Number(editForm.value),
       taxes: Number(editForm.taxes),
-      notes: editForm.notes
+      notes: editForm.notes,
+      is_travel_credit: editForm.is_travel_credit
     });
     setEditingId(null);
     fetchRedemptions();
@@ -151,18 +160,23 @@ export default function Redemptions() {
   };
 
   const handleAddChange = e => {
-    setAddForm({ ...addForm, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setAddForm(f => {
+      if (name === 'is_travel_credit') {
+        return { ...f, is_travel_credit: checked, points: checked && (!f.points || f.points === '') ? 0 : f.points };
+      }
+      return { ...f, [name]: type === 'checkbox' ? checked : value };
+    });
   };
 
   // Validation for add form
   const requiredFields = [
     { key: 'date', label: 'Date' },
     { key: 'source', label: 'Source' },
-    { key: 'points', label: 'Points Used' },
     { key: 'value', label: 'Total Cash Value ($)' }
   ];
-  const missingFields = requiredFields.filter(f => !addForm[f.key] || Number(addForm[f.key]) === 0);
-  const isAddValid = missingFields.length === 0;
+  const missingFields = requiredFields.filter(f => !addForm[f.key] || (f.key === 'points' && !addForm.is_travel_credit && Number(addForm[f.key]) === 0));
+  const isAddValid = missingFields.length === 0 && (addForm.is_travel_credit || Number(addForm.points) > 0);
 
   const handleAddSave = async () => {
     if (!isAddValid) {
@@ -172,24 +186,30 @@ export default function Redemptions() {
     await axios.post('http://localhost:5000/api/redemptions', {
       date: addForm.date,
       source: addForm.source,
-      points: Number(addForm.points),
+      points: addForm.is_travel_credit ? 0 : Number(addForm.points),
       value: Number(addForm.value),
       taxes: Number(addForm.taxes),
-      notes: addForm.notes
+      notes: addForm.notes,
+      is_travel_credit: addForm.is_travel_credit
     });
-    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '' });
+    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
     setAdding(false);
     fetchRedemptions();
   };
 
   const handleAddCancel = () => {
-    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '' });
+    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
     setAdding(false);
   };
 
   // Prepare data with cpp calculated
   const tableData = redemptions.map(r => {
-    const cpp = r.points > 0 ? ((r.value - (r.taxes || 0)) / r.points) * 100 : '';
+    let cpp = '';
+    if (r.is_travel_credit) {
+      cpp = ((r.value - (r.taxes || 0)) * 100).toFixed(1);
+    } else if (r.points > 0) {
+      cpp = ((r.value - (r.taxes || 0)) / r.points * 100).toFixed(1);
+    }
     return { ...r, cpp };
   });
 
@@ -286,10 +306,13 @@ export default function Redemptions() {
                     ))}
                   </select>
                 </td>
-                <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min="1" /></td>
+                <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min={editForm.is_travel_credit ? 0 : 1} /></td>
                 <td><input type="number" name="taxes" value={editForm.taxes} onChange={handleEditChange} min="0" step="0.01" /></td>
                 <td><input type="number" name="value" value={editForm.value} onChange={handleEditChange} min="0.01" step="0.01" /></td>
-                <td>{editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : ''}</td>
+                <td>{editForm.is_travel_credit ? ((editForm.value - editForm.taxes) * 100).toFixed(1) + '¢' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+                <td>
+                  <input type="checkbox" name="is_travel_credit" checked={!!editForm.is_travel_credit} onChange={handleEditChange} />
+                </td>
                 <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} /></td>
                 <td>
                   <button onClick={() => handleEditSave(r.id)} style={{ color: 'green', marginRight: 4 }}>Save</button>
@@ -303,7 +326,8 @@ export default function Redemptions() {
                 <td>{r.points}</td>
                 <td>{usd(r.taxes)}</td>
                 <td>{usd(r.value)}</td>
-                <td>{r.cpp !== '' ? Number(r.cpp).toFixed(1) + '¢/pt' : ''}</td>
+                <td>{r.cpp !== '' ? r.cpp + (r.is_travel_credit ? '¢' : '¢/pt') : ''}</td>
+                <td><input type="checkbox" checked={!!r.is_travel_credit} readOnly /></td>
                 <td>{r.notes}</td>
                 <td>
                   <button onClick={() => handleEdit(r)} style={{ marginRight: 4, background: 'none', border: 'none', boxShadow: 'none', padding: 0, cursor: 'pointer' }} title="Edit">✏️</button>
@@ -344,8 +368,8 @@ export default function Redemptions() {
             </label>
           </div>
           <div style={{ marginBottom: 12 }}>
-            <label>Points Used{<RequiredAsterisk />}<br />
-              <input type="number" name="points" value={addForm.points} onChange={handleAddChange} min="1" />
+            <label>Points Used{!addForm.is_travel_credit && <RequiredAsterisk />}<br />
+              <input type="number" name="points" value={addForm.points} onChange={handleAddChange} min={addForm.is_travel_credit ? 0 : 1} />
             </label>
           </div>
           <div style={{ marginBottom: 12 }}>
@@ -357,6 +381,9 @@ export default function Redemptions() {
             <label>Total Cash Value ($){<RequiredAsterisk />}<br />
               <input type="number" name="value" value={addForm.value} onChange={handleAddChange} min="0.01" step="0.01" />
             </label>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label><input type="checkbox" name="is_travel_credit" checked={!!addForm.is_travel_credit} onChange={handleAddChange} /> Free Night Award/Credit</label>
           </div>
           <div style={{ marginBottom: 12 }}>
             <label>Notes<br />
