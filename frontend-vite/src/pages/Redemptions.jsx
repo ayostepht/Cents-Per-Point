@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import { PlusCircle, Edit2, Trash2, Search, CheckCircle } from 'lucide-react';
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
+import { MultiSelect } from 'react-multi-select-component';
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
@@ -51,6 +55,9 @@ const sourceOptions = [
   }
 ];
 
+// Prepare options for MultiSelect
+const sourceMultiOptions = sourceOptions.flatMap(group => group.options.map(opt => ({ label: opt, value: opt })));
+
 export default function Redemptions() {
   const [redemptions, setRedemptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +65,13 @@ export default function Redemptions() {
   const [deleting, setDeleting] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
-  const [filters, setFilters] = useState({ source: '', dateFrom: '', dateTo: '' });
+  const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', search: '' });
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
+  const [cppRange, setCppRange] = useState([0, 10]);
+  const CPP_MIN = 0;
+  const CPP_MAX = 10;
 
   const location = useLocation();
 
@@ -69,7 +79,7 @@ export default function Redemptions() {
     const params = new URLSearchParams(location.search);
     const sourceParam = params.get('source');
     if (sourceParam) {
-      setFilters(f => ({ ...f, source: sourceParam }));
+      setFilters(f => ({ ...f, source: sourceParam.split(',') }));
     }
     // eslint-disable-next-line
   }, [location.search]);
@@ -206,9 +216,10 @@ export default function Redemptions() {
 
   // Filtering (no CPP filter)
   const filteredData = tableData.filter(r => {
-    if (filters.source && r.source !== filters.source) return false;
+    if (filters.source.length > 0 && !filters.source.includes(r.source)) return false;
     if (filters.dateFrom && r.date < filters.dateFrom) return false;
     if (filters.dateTo && r.date > filters.dateTo) return false;
+    if (r.cpp && (!isNaN(Number(r.cpp))) && (Number(r.cpp) < cppRange[0] || Number(r.cpp) > cppRange[1])) return false;
     return true;
   });
 
@@ -240,112 +251,166 @@ export default function Redemptions() {
   }, [filters, redemptions]);
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Redemptions</h2>
-      <div className="mb-4 flex flex-wrap gap-4 items-end">
-        <label className="font-medium">Source:
-          <select name="source" value={filters.source} onChange={e => setFilters(f => ({ ...f, source: e.target.value }))} className="ml-2 mr-4 border rounded p-1">
-            <option value="">All</option>
-            {sourceOptions.map(group => (
-              <optgroup key={group.label} label={group.label}>
-                {group.options.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-        <label className="font-medium">Date From:
-          <input type="date" name="dateFrom" value={filters.dateFrom} onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))} className="ml-2 mr-4 border rounded p-1" />
-        </label>
-        <label className="font-medium">Date To:
-          <input type="date" name="dateTo" value={filters.dateTo} onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))} className="ml-2 border rounded p-1" />
-        </label>
+    <div className="max-w-7xl mx-auto px-4 py-10 bg-gray-50 min-h-screen">
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-8 tracking-tight">My Redemptions</h2>
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-end mb-6">
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Source</label>
+          <MultiSelect
+            options={sourceMultiOptions}
+            value={filters.source.map(val => sourceMultiOptions.find(opt => opt.value === val)).filter(Boolean)}
+            onChange={selected => setFilters(f => ({ ...f, source: selected.map(opt => opt.value) }))}
+            labelledBy="Select Source"
+            className="min-w-[180px]"
+            hasSelectAll={false}
+            overrideStrings={{ selectSomeItems: 'Select Source(s)', allItemsAreSelected: 'All Sources', search: 'Search...' }}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Date From</label>
+          <input
+            type="date"
+            name="dateFrom"
+            value={filters.dateFrom}
+            onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
+            className="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-w-[120px]"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Date To</label>
+          <input
+            type="date"
+            name="dateTo"
+            value={filters.dateTo}
+            onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
+            className="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-w-[120px]"
+          />
+        </div>
+        <div className="flex flex-col min-w-[200px]">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">CPP Range (¢)</label>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 w-6 text-right">{cppRange[0]}</span>
+            <Slider
+              range
+              min={CPP_MIN}
+              max={CPP_MAX}
+              value={cppRange}
+              onChange={setCppRange}
+              allowCross={false}
+              trackStyle={[{ backgroundColor: '#2563eb' }]}
+              handleStyle={[{ borderColor: '#2563eb' }, { borderColor: '#2563eb' }]}
+              railStyle={{ backgroundColor: '#e5e7eb' }}
+            />
+            <span className="text-xs text-gray-500 w-6 text-left">{cppRange[1]}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setFilters(f => ({ ...f, source: [], dateFrom: '', dateTo: '' }));
+            setCppRange([CPP_MIN, CPP_MAX]);
+          }}
+          className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold mt-5"
+          type="button"
+        >
+          Clear Filters
+        </button>
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg ml-auto mt-5"
+          type="button"
+        >
+          <PlusCircle size={22} /> Add New Redemption
+        </button>
       </div>
-      {loading ? <p>Loading...</p> : (
-        <>
-        <table className="w-full border-collapse max-w-3xl mx-auto bg-white rounded-lg shadow overflow-hidden">
-          <thead>
-            <tr className="bg-gray-100">
-              {columns.map(col => (
-                <th key={col.key} onClick={() => col.key !== 'actions' && handleSort(col.key)} className={col.key !== 'actions' ? 'cursor-pointer' : ''}>
-                  {col.label}
-                  {sort.key === col.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={columns.length} className="p-0 border-none bg-none">
-                <button onClick={() => setAdding(true)} className="w-full py-2 bg-blue-50 border border-blue-200 text-blue-700 font-bold cursor-pointer">+ Add Redemption</button>
+      <table className="w-full border-collapse bg-white rounded-xl shadow overflow-hidden">
+        <thead>
+          <tr className="bg-gray-50">
+            {[
+              { key: 'date', label: 'Date' },
+              { key: 'source', label: 'Source' },
+              { key: 'points', label: 'Total Points' },
+              { key: 'taxes', label: 'Taxes/Fees' },
+              { key: 'value', label: 'Cash Value' },
+              { key: 'cpp', label: 'CPP (¢)' },
+              { key: 'is_travel_credit', label: 'Free Night Award/Credit' },
+              { key: 'notes', label: 'Notes' },
+              { key: 'actions', label: 'Actions' },
+            ].map(col => (
+              <th
+                key={col.key}
+                onClick={() => col.key !== 'actions' && handleSort(col.key)}
+                className={
+                  'px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider' +
+                  (col.key !== 'actions' ? ' cursor-pointer select-none' : '')
+                }
+                style={{ userSelect: 'none' }}
+              >
+                {col.label}
+                {sort.key === col.key ? (
+                  <span className="ml-1">{sort.dir === 'asc' ? '▲' : '▼'}</span>
+                ) : null}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {pagedData.map(r => editingId === r.id ? (
+            <tr key={r.id} className="bg-gray-50">
+              <td><input type="date" name="date" value={editForm.date} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
+              <td>
+                <select name="source" value={editForm.source} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                  <option value="">Select Source</option>
+                  {sourceOptions.map(group => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.options.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </td>
+              <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min={editForm.is_travel_credit ? 0 : 1} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
+              <td><input type="number" name="taxes" value={editForm.taxes} onChange={handleEditChange} min="0" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
+              <td><input type="number" name="value" value={editForm.value} onChange={handleEditChange} min="0.01" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
+              <td>{editForm.is_travel_credit ? ((editForm.value - editForm.taxes) * 100).toFixed(1) + '¢' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+              <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
+              <td className="flex gap-2 items-center">
+                <button onClick={() => handleEditSave(r.id)} className="text-green-600"><Edit2 size={18} /></button>
+                <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
               </td>
             </tr>
-            {pagedData.map(r => editingId === r.id ? (
-              <tr key={r.id} className="bg-gray-50">
-                <td><input type="date" name="date" value={editForm.date} onChange={handleEditChange} className="border rounded p-1" /></td>
-                <td>
-                  <select name="source" value={editForm.source} onChange={handleEditChange} className="border rounded p-1">
-                    <option value="">Select Source</option>
-                    {sourceOptions.map(group => (
-                      <optgroup key={group.label} label={group.label}>
-                        {group.options.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </td>
-                <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min={editForm.is_travel_credit ? 0 : 1} className="border rounded p-1" /></td>
-                <td><input type="number" name="taxes" value={editForm.taxes} onChange={handleEditChange} min="0" step="0.01" className="border rounded p-1" /></td>
-                <td><input type="number" name="value" value={editForm.value} onChange={handleEditChange} min="0.01" step="0.01" className="border rounded p-1" /></td>
-                <td>{editForm.is_travel_credit ? ((editForm.value - editForm.taxes) * 100).toFixed(1) + '¢' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
-                <td>
-                  <input type="checkbox" name="is_travel_credit" checked={!!editForm.is_travel_credit} onChange={handleEditChange} />
-                </td>
-                <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border rounded p-1" /></td>
-                <td>
-                  <button onClick={() => handleEditSave(r.id)} className="text-green-600 mr-2">Save</button>
-                  <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
-                </td>
-              </tr>
-            ) : (
-              <tr key={r.id}>
-                <td>{r.date}</td>
-                <td>{r.source}</td>
-                <td>{r.points}</td>
-                <td>{usd(r.taxes)}</td>
-                <td>{usd(r.value)}</td>
-                <td>{r.cpp !== '' ? r.cpp + (r.is_travel_credit ? '¢' : '¢/pt') : ''}</td>
-                <td><input type="checkbox" checked={!!r.is_travel_credit} readOnly /></td>
-                <td>{r.notes}</td>
-                <td>
-                  <button onClick={() => handleEdit(r)} className="mr-2 text-blue-600 hover:underline" title="Edit">✏️</button>
-                  <button onClick={() => handleDelete(r.id)} disabled={deleting === r.id} className="text-red-600 hover:underline" title="Delete">🗑️</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="mt-4 flex justify-center items-center gap-4">
-          <button onClick={() => handlePageChange(page - 1)} disabled={page === 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
-          <span>Page {page} of {totalPages}</span>
-          <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
-        </div>
-        </>
-      )}
-      {/* Add Redemption Modal */}
+          ) : (
+            <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{new Date(r.date).toLocaleDateString()}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{r.source}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{r.points.toLocaleString()}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{usd(r.taxes)}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{usd(r.value)}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-black">{r.cpp !== '' ? r.cpp : ''}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-center">
+                {r.is_travel_credit ? <CheckCircle size={20} className="inline text-blue-600 font-bold" /> : <span className="text-gray-400 font-bold">-</span>}
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={r.notes}>{r.notes || '-'}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex gap-2 items-center">
+                <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 transition duration-150" title="Edit"><Edit2 size={18} /></button>
+                <button onClick={() => handleDelete(r.id)} disabled={deleting === r.id} className="text-red-600 hover:text-red-800 transition duration-150" title="Delete"><Trash2 size={18} /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {/* Modal for Add/Edit Redemption */}
       <Modal open={adding} onClose={handleAddCancel}>
-        <h3 className="text-lg font-bold mb-4 mt-0">Add Redemption</h3>
-        <form onSubmit={e => { e.preventDefault(); handleAddSave(); }}>
-          <div className="mb-3">
-            <label className="block">Date{<RequiredAsterisk />}<br />
-              <input type="date" name="date" value={addForm.date} onChange={handleAddChange} className="border rounded p-1 w-full" />
+        <h3 className="text-2xl font-bold mb-6 mt-0 text-center">Add New Redemption</h3>
+        <form onSubmit={e => { e.preventDefault(); handleAddSave(); }} className="space-y-4">
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Date<br />
+              <input type="date" name="date" value={addForm.date} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
-          <div className="mb-3">
-            <label className="block">Source{<RequiredAsterisk />}<br />
-              <select name="source" value={addForm.source} onChange={handleAddChange} className="border rounded p-1 w-full">
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Source<br />
+              <select name="source" value={addForm.source} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                 <option value="">Select Source</option>
                 {sourceOptions.map(group => (
                   <optgroup key={group.label} label={group.label}>
@@ -357,32 +422,33 @@ export default function Redemptions() {
               </select>
             </label>
           </div>
-          <div className="mb-3">
-            <label className="block">Points Used{!addForm.is_travel_credit && <RequiredAsterisk />}<br />
-              <input type="number" name="points" value={addForm.points} onChange={handleAddChange} min={addForm.is_travel_credit ? 0 : 1} className="border rounded p-1 w-full" />
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Total Points<br />
+              <input type="number" name="points" value={addForm.points} onChange={handleAddChange} min={addForm.is_travel_credit ? 0 : 1} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
-          <div className="mb-3">
-            <label className="block">Additional Taxes/Fees Paid ($)<br />
-              <input type="number" name="taxes" value={addForm.taxes} onChange={handleAddChange} min="0" step="0.01" className="border rounded p-1 w-full" />
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Taxes/Fees (USD)<br />
+              <input type="number" name="taxes" value={addForm.taxes} onChange={handleAddChange} min="0" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
-          <div className="mb-3">
-            <label className="block">Total Cash Value ($){<RequiredAsterisk />}<br />
-              <input type="number" name="value" value={addForm.value} onChange={handleAddChange} min="0.01" step="0.01" className="border rounded p-1 w-full" />
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Cash Value (USD)<br />
+              <input type="number" name="value" value={addForm.value} onChange={handleAddChange} min="0.01" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
-          <div className="mb-3">
-            <label className="block"><input type="checkbox" name="is_travel_credit" checked={!!addForm.is_travel_credit} onChange={handleAddChange} /> Free Night Award/Credit</label>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" name="is_travel_credit" checked={!!addForm.is_travel_credit} onChange={handleAddChange} className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <label htmlFor="is_travel_credit" className="text-gray-700 font-medium">Free Night Award/Credit</label>
           </div>
-          <div className="mb-3">
-            <label className="block">Notes<br />
-              <input type="text" name="notes" value={addForm.notes} onChange={handleAddChange} className="border rounded p-1 w-full" />
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">Notes<br />
+              <input type="text" name="notes" value={addForm.notes} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
-          <div className="flex gap-3 mt-4">
-            <button type="submit" disabled={!isAddValid} className={"px-4 py-2 rounded font-bold " + (isAddValid ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>Add</button>
-            <button type="button" onClick={handleAddCancel} className="px-4 py-2 rounded bg-gray-200 text-gray-700">Cancel</button>
+          <div className="flex gap-3 mt-6 justify-end">
+            <button type="button" onClick={handleAddCancel} className="px-5 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold">Cancel</button>
+            <button type="submit" disabled={!isAddValid} className={"px-5 py-3 rounded-xl font-bold " + (isAddValid ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>Add Redemption</button>
           </div>
         </form>
       </Modal>

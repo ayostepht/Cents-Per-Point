@@ -4,38 +4,44 @@ import Dashboard from './pages/Dashboard';
 import Redemptions from './pages/Redemptions';
 import ShouldIBookIt from './pages/ShouldIBookIt';
 import './index.css';
+import { Home, List, Calculator } from 'lucide-react';
 
 function NavBar() {
   const location = useLocation();
   const navLinks = [
-    { to: '/', label: 'Dashboard' },
-    { to: '/redemptions', label: 'Redemptions' },
-    { to: '/should-i-book-it', label: 'Should I Book It?' },
+    { to: '/', label: 'Dashboard', icon: <Home size={20} /> },
+    { to: '/redemptions', label: 'Redemptions', icon: <List size={20} /> },
+    { to: '/should-i-book-it', label: 'Calculator', icon: <Calculator size={20} /> },
   ];
+  // Simulate user ID for demo (replace with real if available)
+  const userId = '09174971448898728530';
   return (
-    <nav className="sticky top-0 z-20 w-full bg-platinum-700 shadow border-b border-platinum-400">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex gap-8 items-center">
-        <span className="text-2xl font-bold text-oxford-blue-500 tracking-tight">Cost Per Point</span>
-        {navLinks.map(link => {
-          const isActive = location.pathname === link.to;
-          return (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={
-                `font-semibold px-2 py-1 rounded transition ` +
-                (isActive
-                  ? 'text-orange-web-700 bg-orange-web-100 underline underline-offset-4'
-                  : 'text-oxford-blue-700 hover:text-orange-web-500 hover:bg-orange-web-50')
-              }
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
+    <header className="sticky top-0 z-40 w-full bg-white shadow-md border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-8">
+        <span className="text-3xl font-extrabold text-blue-600 tracking-tight">Cents Per Point</span>
+        <nav className="flex gap-2">
+          {navLinks.map(link => {
+            const isActive = location.pathname === link.to;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={
+                  `flex items-center gap-2 font-semibold px-5 py-2 rounded-xl transition shadow-sm ` +
+                  (isActive
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200')
+                }
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {link.icon} {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1 font-mono">User ID: <span className="font-semibold">{userId}</span></span>
       </div>
-    </nav>
+    </header>
   );
 }
 

@@ -40,37 +40,39 @@ export default function ShouldIBookIt() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-8">
-      <h2 className="text-2xl font-bold mb-2">Should I Book It?</h2>
-      <p className="mb-4 text-gray-600">Calculate the cents-per-point (CPP) value for a potential booking.</p>
-      <form onSubmit={e => e.preventDefault()}>
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Point Type<br />
-            <select value={program} onChange={e => setProgram(e.target.value)} className="w-full border border-gray-300 rounded p-2" required>
+    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-10 mt-10">
+      <h2 className="text-4xl font-extrabold mb-2 text-gray-900 text-center">Cents Per Point Calculator</h2>
+      <p className="mb-6 text-gray-500 text-center text-lg">Determine if a potential redemption is a good use of your points. Enter the details below to calculate the Cents Per Point (CPP) value.</p>
+      <form onSubmit={e => e.preventDefault()} className="space-y-5">
+        <div>
+          <label className="block font-semibold mb-1 text-gray-700">Source Program<br />
+            <select value={program} onChange={e => setProgram(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required>
               <option value="">Select Program</option>
               {pointPrograms.map(p => (
                 <option key={p.value} value={p.value}>{p.label}</option>
               ))}
             </select>
           </label>
+          {program && <div className="text-xs text-gray-400 mt-1">Commonly accepted value for {pointPrograms.find(p => p.value === program).label}: ~{(pointPrograms.find(p => p.value === program).ref * 100).toFixed(1)}¢/pt</div>}
         </div>
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Points Needed<br />
-            <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} className="w-full border border-gray-300 rounded p-2" />
+        <div>
+          <label className="block font-semibold mb-1 text-gray-700">Total Points Required<br />
+            <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="e.g., 50000" />
           </label>
         </div>
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Total Cash Value ($)<br />
-            <input type="number" min="0.01" step="0.01" value={cashValue} onChange={e => setCashValue(e.target.value)} className="w-full border border-gray-300 rounded p-2" />
+        <div>
+          <label className="block font-semibold mb-1 text-gray-700">Taxes/Fees (USD)<br />
+            <input type="number" min="0" step="0.01" value={taxes} onChange={e => setTaxes(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="0" />
           </label>
         </div>
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Taxes/Fees ($, optional)<br />
-            <input type="number" min="0" step="0.01" value={taxes} onChange={e => setTaxes(e.target.value)} className="w-full border border-gray-300 rounded p-2" />
+        <div>
+          <label className="block font-semibold mb-1 text-gray-700">Cash Value of Redemption (USD)<br />
+            <input type="number" min="0.01" step="0.01" value={cashValue} onChange={e => setCashValue(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="e.g., 1000" />
           </label>
         </div>
+        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow text-lg flex items-center justify-center gap-2"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg> Calculate CPP</button>
       </form>
-      <div className="mt-6 text-xl font-bold">
+      <div className="mt-8 text-xl font-bold text-center">
         {isValid ? (
           <>
             CPP: <span className="text-blue-600">{cpp}¢/pt</span>

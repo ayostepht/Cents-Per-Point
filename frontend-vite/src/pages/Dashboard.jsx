@@ -9,11 +9,11 @@ const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('e
 
 function MetricCard({ title, value, icon }) {
   return (
-    <div className="bg-white p-5 rounded-xl shadow-md border border-platinum-400 flex items-center gap-4">
-      <div className="p-3 bg-platinum-700 rounded-full text-2xl">{icon}</div>
+    <div className="bg-white p-6 rounded-xl shadow border border-gray-100 flex items-center gap-4">
+      <div className="p-4 bg-gray-100 rounded-full text-2xl flex items-center justify-center">{icon}</div>
       <div>
-        <p className="text-xs text-black-700 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-oxford-blue-500">{value}</p>
+        <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
+        <p className="text-3xl font-extrabold text-gray-900">{value}</p>
       </div>
     </div>
   );
@@ -132,14 +132,14 @@ export default function Dashboard() {
   const recentRedemptions = filtered.slice(0, 5);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10 space-y-10 bg-platinum-900 min-h-screen">
-      <h2 className="text-4xl font-extrabold text-oxford-blue-500 mb-6 tracking-tight">Dashboard</h2>
+    <div className="max-w-7xl mx-auto px-4 py-10 space-y-10 bg-gray-50 min-h-screen">
+      <h2 className="text-5xl font-extrabold text-gray-900 mb-8 tracking-tight">Dashboard</h2>
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Avg CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-orange-web-500">💡</span>} />
-        <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-orange-web-500">💰</span>} />
-        <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-orange-web-500">🔢</span>} />
-        <MetricCard title="Total Redemptions" value={filtered.length.toLocaleString()} icon={<span className="text-orange-web-500">📅</span>} />
+        <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
+        <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-green-500">$</span>} />
+        <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
+        <MetricCard title="Total Redemptions" value={filtered.length.toLocaleString()} icon={<span className="text-indigo-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>} />
       </div>
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
