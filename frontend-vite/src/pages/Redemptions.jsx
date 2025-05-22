@@ -5,6 +5,7 @@ import { PlusCircle, Edit2, Trash2, Search, CheckCircle } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { MultiSelect } from 'react-multi-select-component';
+import API_URL from '../config';
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
@@ -90,7 +91,7 @@ export default function Redemptions() {
 
   const fetchRedemptions = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/redemptions')
+    axios.get(`${API_URL}/api/redemptions`)
       .then(res => {
         setRedemptions(res.data);
         setLoading(false);
@@ -109,7 +110,7 @@ export default function Redemptions() {
     if (!window.confirm('Are you sure you want to delete this redemption?')) return;
     setDeleting(id);
     try {
-      await axios.delete(`http://localhost:5000/api/redemptions/${id}`);
+      await axios.delete(`${API_URL}/api/redemptions/${id}`);
       fetchRedemptions();
     } finally {
       setDeleting(null);
@@ -140,7 +141,7 @@ export default function Redemptions() {
   };
 
   const handleEditSave = async id => {
-    await axios.put(`http://localhost:5000/api/redemptions/${id}`, {
+    await axios.put(`${API_URL}/api/redemptions/${id}`, {
       date: editForm.date,
       source: editForm.source,
       points: editForm.is_travel_credit ? 0 : Number(editForm.points),
@@ -181,7 +182,7 @@ export default function Redemptions() {
       alert('Please complete the following required fields: ' + missingFields.map(f => f.label).join(', '));
       return;
     }
-    await axios.post('http://localhost:5000/api/redemptions', {
+    await axios.post(`${API_URL}/api/redemptions`, {
       date: addForm.date,
       source: addForm.source,
       points: addForm.is_travel_credit ? 0 : Number(addForm.points),

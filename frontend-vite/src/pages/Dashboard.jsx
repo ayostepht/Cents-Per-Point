@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 
 const COLORS = ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#8884d8', '#82ca9d', '#A4DE6C', '#D0ED57', '#FFC658'];
 
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/redemptions')
+    axios.get(`${API_URL}/api/redemptions`)
       .then(res => {
         setRedemptions(res.data);
         setLoading(false);

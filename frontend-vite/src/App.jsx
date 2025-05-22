@@ -13,8 +13,6 @@ function NavBar() {
     { to: '/redemptions', label: 'Redemptions', icon: <List size={20} /> },
     { to: '/should-i-book-it', label: 'Calculator', icon: <Calculator size={20} /> },
   ];
-  // Simulate user ID for demo (replace with real if available)
-  const userId = '09174971448898728530';
   return (
     <header className="sticky top-0 z-40 w-full bg-white shadow-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-8">
@@ -39,7 +37,6 @@ function NavBar() {
             );
           })}
         </nav>
-        <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1 font-mono">User ID: <span className="font-semibold">{userId}</span></span>
       </div>
     </header>
   );
