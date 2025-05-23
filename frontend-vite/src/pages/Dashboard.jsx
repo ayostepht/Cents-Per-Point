@@ -133,143 +133,148 @@ export default function Dashboard() {
   const recentRedemptions = filtered.slice(0, 5);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10 space-y-10 bg-gray-50 min-h-screen">
-      <h2 className="text-5xl font-extrabold text-gray-900 mb-8 tracking-tight">Dashboard</h2>
-      {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
-        <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-green-500">$</span>} />
-        <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
-        <MetricCard title="Total Redemptions" value={filtered.length.toLocaleString()} icon={<span className="text-indigo-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>} />
-      </div>
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">Avg CPP by Source</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={cppBySourceData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
-              <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
-              <Tooltip />
-              <Legend wrapperStyle={{fontSize: "12px"}} />
-              <Bar dataKey="CPP" fill="#8884d8">
-                {cppBySourceData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">CPP Over Time</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={cppByDate} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
-              <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
-              <Tooltip />
-              <Legend wrapperStyle={{fontSize: "12px"}} />
-              <Line type="monotone" dataKey="cpp" stroke="#219ebc" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">Points by Source</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={cppBySourceData.map(s => ({name: s.name, value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0)}))}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {cppBySourceData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend wrapperStyle={{fontSize: "12px"}} iconSize={10}/>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">Cumulative Points Over Time</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={pointsByDate} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#219ebc" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8ecae6" stopOpacity={0.2}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
-              <YAxis tick={{fontSize: 10}} />
-              <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip />
-              <Area type="monotone" dataKey="points" stroke="#219ebc" fillOpacity={1} fill="url(#colorPoints)" />
-              <Legend />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      {/* Best/Worst & Recent Redemptions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">🌟 Best Redemption (by CPP)</h3>
-          {bestRedemption ? (
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">Date:</span> {new Date(bestRedemption.date).toLocaleDateString()}</p>
-              <p><span className="font-medium">Source:</span> {bestRedemption.source}</p>
-              <p><span className="font-medium">Points:</span> {bestRedemption.points.toLocaleString()}</p>
-              <p><span className="font-medium">Value:</span> {usd(bestRedemption.value - (bestRedemption.taxes || 0))}</p>
-              <p className="text-indigo-600 font-semibold"><span className="font-medium">CPP:</span> {(((bestRedemption.value - (bestRedemption.taxes || 0)) / bestRedemption.points) * 100).toFixed(2)} ¢</p>
-            </div>
-          ) : <p className="text-sm text-gray-500">N/A</p>}
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-          <h3 className="text-lg font-bold text-oxford-blue-400 mb-3">📉 Worst Redemption (by CPP)</h3>
-          {worstRedemption ? (
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">Date:</span> {new Date(worstRedemption.date).toLocaleDateString()}</p>
-              <p><span className="font-medium">Source:</span> {worstRedemption.source}</p>
-              <p><span className="font-medium">Points:</span> {worstRedemption.points.toLocaleString()}</p>
-              <p><span className="font-medium">Value:</span> {usd(worstRedemption.value - (worstRedemption.taxes || 0))}</p>
-              <p className="text-red-600 font-semibold"><span className="font-medium">CPP:</span> {(((worstRedemption.value - (worstRedemption.taxes || 0)) / worstRedemption.points) * 100).toFixed(2)} ¢</p>
-            </div>
-          ) : <p className="text-sm text-gray-500">N/A</p>}
-        </div>
-      </div>
-      <div className="bg-white p-6 rounded-xl shadow-md border border-platinum-400">
-        <h3 className="text-xl font-bold text-oxford-blue-500 mb-4">Recent Redemptions</h3>
-        {recentRedemptions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPP (¢)</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentRedemptions.map(r => (
-                  <tr key={r.id}>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{new Date(r.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{r.source}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{r.points > 0 ? (((r.value - (r.taxes || 0)) / r.points) * 100).toFixed(2) : '--'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="w-full">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
+          <h2 className="text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">Dashboard</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
+            <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-green-500">$</span>} />
+            <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
+            <MetricCard title="Total Redemptions" value={filtered.length.toLocaleString()} icon={<span className="text-indigo-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>} />
           </div>
-        ) : <p className="text-sm text-gray-500">No recent redemptions.</p>}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Avg CPP by Source</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={cppBySourceData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
+                <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
+                <Tooltip />
+                <Legend wrapperStyle={{fontSize: "12px"}} />
+                <Bar dataKey="CPP" fill="#8884d8">
+                  {cppBySourceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">CPP Over Time</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={cppByDate} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
+                <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
+                <Tooltip />
+                <Legend wrapperStyle={{fontSize: "12px"}} />
+                <Line type="monotone" dataKey="cpp" stroke="#219ebc" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Points by Source</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={cppBySourceData.map(s => ({name: s.name, value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0)}))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {cppBySourceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{fontSize: "12px"}} iconSize={10}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Cumulative Points Over Time</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={pointsByDate} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#219ebc" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#8ecae6" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
+                <YAxis tick={{fontSize: 10}} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <Tooltip />
+                <Area type="monotone" dataKey="points" stroke="#219ebc" fillOpacity={1} fill="url(#colorPoints)" />
+                <Legend />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">🌟 Best Redemption (by CPP)</h3>
+            {bestRedemption ? (
+              <div className="space-y-2 text-sm">
+                <p><span className="font-medium">Date:</span> {new Date(bestRedemption.date).toLocaleDateString()}</p>
+                <p><span className="font-medium">Source:</span> {bestRedemption.source}</p>
+                <p><span className="font-medium">Points:</span> {bestRedemption.points.toLocaleString()}</p>
+                <p><span className="font-medium">Value:</span> {usd(bestRedemption.value - (bestRedemption.taxes || 0))}</p>
+                <p className="text-green-600 font-semibold"><span className="font-medium">CPP:</span> {(((bestRedemption.value - (bestRedemption.taxes || 0)) / bestRedemption.points) * 100).toFixed(2)} ¢</p>
+              </div>
+            ) : <p className="text-sm text-gray-500">N/A</p>}
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">📉 Worst Redemption (by CPP)</h3>
+            {worstRedemption ? (
+              <div className="space-y-2 text-sm">
+                <p><span className="font-medium">Date:</span> {new Date(worstRedemption.date).toLocaleDateString()}</p>
+                <p><span className="font-medium">Source:</span> {worstRedemption.source}</p>
+                <p><span className="font-medium">Points:</span> {worstRedemption.points.toLocaleString()}</p>
+                <p><span className="font-medium">Value:</span> {usd(worstRedemption.value - (worstRedemption.taxes || 0))}</p>
+                <p className="text-red-600 font-semibold"><span className="font-medium">CPP:</span> {(((worstRedemption.value - (worstRedemption.taxes || 0)) / worstRedemption.points) * 100).toFixed(2)} ¢</p>
+              </div>
+            ) : <p className="text-sm text-gray-500">N/A</p>}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-8">
+          <h3 className="text-xl font-bold text-gray-800 mb-6">Recent Redemptions</h3>
+          {recentRedemptions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPP (¢)</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentRedemptions.map(r => (
+                    <tr key={r.id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{new Date(r.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{r.source}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{r.points > 0 ? (((r.value - (r.taxes || 0)) / r.points) * 100).toFixed(2) : '--'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-sm text-gray-500">No recent redemptions.</p>}
+        </div>
       </div>
     </div>
   );

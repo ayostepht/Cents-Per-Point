@@ -14,8 +14,8 @@ function NavBar() {
     { to: '/should-i-book-it', label: 'Calculator', icon: <Calculator size={20} /> },
   ];
   return (
-    <header className="sticky top-0 z-40 w-full bg-white shadow-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-8">
+    <header className="w-full bg-white sticky top-0 z-40 border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <span className="text-3xl font-extrabold text-blue-600 tracking-tight">Cents Per Point</span>
         <nav className="flex gap-2">
           {navLinks.map(link => {
@@ -46,7 +46,7 @@ function App() {
   return (
     <Router>
       <NavBar />
-      <div className="min-h-screen bg-platinum-900">
+      <div className="min-h-screen bg-gray-100 w-full">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/redemptions" element={<Redemptions />} />
