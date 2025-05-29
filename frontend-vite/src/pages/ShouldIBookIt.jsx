@@ -1,21 +1,5 @@
 import React, { useState } from 'react';
-
-const pointPrograms = [
-  { label: 'Chase', value: 'chase', ref: 0.02 },
-  { label: 'Amex', value: 'amex', ref: 0.02 },
-  { label: 'Capital One', value: 'capitalone', ref: 0.018 },
-  { label: 'Bilt', value: 'bilt', ref: 0.015 },
-  { label: 'Citi', value: 'citi', ref: 0.018 },
-  { label: 'World of Hyatt', value: 'hyatt', ref: 0.023 },
-  { label: 'Marriott Bonvoy', value: 'marriott', ref: 0.007 },
-  { label: 'Hilton Honors', value: 'hilton', ref: 0.006 },
-  { label: 'IHG One Rewards', value: 'ihg', ref: 0.009 },
-  { label: 'Delta SkyMiles', value: 'delta', ref: 0.011 },
-  { label: 'Southwest Rapid Rewards', value: 'southwest', ref: 0.015 },
-  { label: 'United MileagePlus', value: 'united', ref: 0.012 },
-  { label: 'Alaska Airlines', value: 'alaska', ref: 0.014 },
-  { label: 'Hawaiian Airlines', value: 'hawaiian', ref: 0.009 },
-];
+import { pointPrograms } from '../constants/sourceOptions';
 
 export default function ShouldIBookIt() {
   const [points, setPoints] = useState('');
@@ -51,9 +35,24 @@ export default function ShouldIBookIt() {
               <label className="block font-semibold mb-2 text-gray-700">Source Program<br />
                 <select value={program} onChange={e => setProgram(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required>
                   <option value="">Select Program</option>
-                  {pointPrograms.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
+                  
+                  <optgroup label="Credit Cards">
+                    {pointPrograms.filter(p => ['chase', 'amex', 'capitalone', 'citi', 'bilt', 'wellsfargo', 'boa', 'discover', 'usbank', 'barclays'].includes(p.value)).map(p => (
+                      <option key={p.value} value={p.value}>{p.label} (~{(p.ref * 100).toFixed(1)}¢/pt)</option>
+                    ))}
+                  </optgroup>
+                  
+                  <optgroup label="Airlines">
+                    {pointPrograms.filter(p => ['southwest', 'britishairways', 'singapore', 'alaska', 'jetblue', 'flyingblue', 'virgin', 'american', 'united', 'aircanada', 'qatar', 'delta', 'lufthansa', 'emirates', 'hawaiian', 'spirit', 'frontier'].includes(p.value)).map(p => (
+                      <option key={p.value} value={p.value}>{p.label} (~{(p.ref * 100).toFixed(1)}¢/pt)</option>
+                    ))}
+                  </optgroup>
+                  
+                  <optgroup label="Hotels">
+                    {pointPrograms.filter(p => ['hyatt', 'wyndham', 'ihg', 'choice', 'bestwestern', 'accor', 'radisson', 'sonesta', 'marriott', 'hilton'].includes(p.value)).map(p => (
+                      <option key={p.value} value={p.value}>{p.label} (~{(p.ref * 100).toFixed(1)}¢/pt)</option>
+                    ))}
+                  </optgroup>
                 </select>
               </label>
               {program && (

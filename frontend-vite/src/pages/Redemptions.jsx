@@ -6,6 +6,7 @@ import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { MultiSelect } from 'react-multi-select-component';
 import API_URL from '../config';
+import { sourceOptions } from '../constants/sourceOptions';
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
@@ -40,21 +41,6 @@ function Modal({ open, onClose, children }) {
     </div>
   );
 }
-
-const sourceOptions = [
-  {
-    label: 'Credit Card',
-    options: [ 'Chase', 'Amex', 'Citi', 'Bilt', 'Capital One' ].sort()
-  },
-  {
-    label: 'Airline',
-    options: [ 'American Airlines', 'Delta', 'Southwest', 'United', 'Alaskan Air' ].sort()
-  },
-  {
-    label: 'Hotel',
-    options: [ 'Hyatt', 'Hilton', 'Marriott', 'IHG' ].sort()
-  }
-];
 
 // Prepare options for MultiSelect
 const sourceMultiOptions = sourceOptions.flatMap(group => group.options.map(opt => ({ label: opt, value: opt })));

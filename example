@@ -27,28 +27,96 @@ setLogLevel('debug'); // For Firestore logging
 
 // --- Constants ---
 const SOURCE_OPTIONS = [
+    // Credit Cards
     { value: 'chase_ur', label: 'Chase Ultimate Rewards' },
     { value: 'amex_mr', label: 'American Express Membership Rewards' },
     { value: 'citi_ty', label: 'Citi ThankYou Points' },
     { value: 'cap1_miles', label: 'Capital One Miles' },
+    { value: 'bilt_rewards', label: 'Bilt Rewards' },
+    { value: 'wells_fargo', label: 'Wells Fargo Rewards' },
+    { value: 'boa_points', label: 'Bank of America Points' },
+    { value: 'discover_cb', label: 'Discover Cashback Bonus' },
+    { value: 'us_bank', label: 'US Bank Points' },
+    { value: 'barclays', label: 'Barclays Arrival Miles' },
+    
+    // Hotels
     { value: 'marriott_bonvoy', label: 'Marriott Bonvoy' },
     { value: 'hilton_honors', label: 'Hilton Honors' },
+    { value: 'world_of_hyatt', label: 'World of Hyatt' },
+    { value: 'ihg_rewards', label: 'IHG One Rewards' },
+    { value: 'wyndham_rewards', label: 'Wyndham Rewards' },
+    { value: 'choice_privileges', label: 'Choice Privileges' },
+    { value: 'best_western', label: 'Best Western Rewards' },
+    { value: 'accor_all', label: 'Accor Live Limitless' },
+    { value: 'radisson_rewards', label: 'Radisson Rewards' },
+    { value: 'sonesta_travel', label: 'Sonesta Travel Pass' },
+    
+    // Airlines
+    { value: 'american_aa', label: 'American Airlines AAdvantage' },
     { value: 'delta_skymiles', label: 'Delta SkyMiles' },
     { value: 'united_mileageplus', label: 'United MileagePlus' },
     { value: 'southwest_rr', label: 'Southwest Rapid Rewards' },
+    { value: 'alaska_mp', label: 'Alaska Airlines Mileage Plan' },
+    { value: 'jetblue_tb', label: 'JetBlue TrueBlue' },
+    { value: 'hawaiian_hm', label: 'Hawaiian Airlines HawaiianMiles' },
+    { value: 'spirit_fs', label: 'Spirit Airlines Free Spirit' },
+    { value: 'frontier_miles', label: 'Frontier Airlines Miles' },
+    { value: 'air_canada', label: 'Air Canada Aeroplan' },
+    { value: 'british_airways', label: 'British Airways Avios' },
+    { value: 'flying_blue', label: 'Air France-KLM Flying Blue' },
+    { value: 'lufthansa_mm', label: 'Lufthansa Miles & More' },
+    { value: 'emirates_skywards', label: 'Emirates Skywards' },
+    { value: 'qatar_pc', label: 'Qatar Airways Privilege Club' },
+    { value: 'singapore_kf', label: 'Singapore Airlines KrisFlyer' },
+    { value: 'virgin_atlantic', label: 'Virgin Atlantic Flying Club' },
+    
     { value: 'other', label: 'Other' },
 ];
 
 const COMMONLY_ACCEPTED_POINT_VALUES = {
+    // Credit Cards
     chase_ur: 2.0,
     amex_mr: 1.8,
     citi_ty: 1.7,
     cap1_miles: 1.0,
+    bilt_rewards: 1.5,
+    wells_fargo: 1.0,
+    boa_points: 1.0,
+    discover_cb: 1.0,
+    us_bank: 1.0,
+    barclays: 1.0,
+    
+    // Hotels
     marriott_bonvoy: 0.8,
     hilton_honors: 0.6,
+    world_of_hyatt: 2.3,
+    ihg_rewards: 0.9,
+    wyndham_rewards: 1.0,
+    choice_privileges: 0.8,
+    best_western: 0.8,
+    accor_all: 0.8,
+    radisson_rewards: 0.8,
+    sonesta_travel: 0.8,
+    
+    // Airlines
+    american_aa: 1.2,
     delta_skymiles: 1.2,
     united_mileageplus: 1.3,
     southwest_rr: 1.4,
+    alaska_mp: 1.4,
+    jetblue_tb: 1.3,
+    hawaiian_hm: 0.9,
+    spirit_fs: 0.8,
+    frontier_miles: 0.8,
+    air_canada: 1.2,
+    british_airways: 1.5,
+    flying_blue: 1.3,
+    lufthansa_mm: 1.1,
+    emirates_skywards: 1.0,
+    qatar_pc: 1.2,
+    singapore_kf: 1.5,
+    virgin_atlantic: 1.3,
+    
     other: 1.0, // Default for 'Other'
 };
 
