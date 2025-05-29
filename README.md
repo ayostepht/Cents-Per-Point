@@ -42,6 +42,8 @@ docker-compose up
 
 3. Open [http://localhost:3000](http://localhost:3000)
 
+**For server deployment**: The frontend automatically detects the hostname and connects to the backend on the same host. No additional configuration needed!
+
 ### Using Docker CLI
 
 ```bash
