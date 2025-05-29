@@ -57,6 +57,36 @@ docker run -d --name cpp-backend -p 5000:5000 -v cpp_data:/app/data stephtanner1
 docker run -d --name cpp-frontend -p 3000:3000 stephtanner1/cpp-frontend:latest
 ```
 
+## 🛠️ Development Setup
+
+### Local Development with Hot Reloading
+
+For contributors and developers:
+
+```bash
+# Start development environment (recommended)
+./dev-local.sh
+
+# Or manually:
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+Features:
+- ✅ Hot reloading for both frontend and backend
+- ✅ Source code mounted as volumes
+- ✅ Vite dev server for frontend (port 3000)
+- ✅ Nodemon for backend auto-restart
+
+### Local Production Testing
+
+```bash
+# Build and test production containers locally
+./build-local.sh
+
+# Or manually:
+docker-compose -f docker-compose.local.yml up --build
+```
+
 ## 📊 How It Works
 
 ### Adding Redemptions
@@ -105,6 +135,31 @@ Track redemptions from all major:
 - All data is stored locally in your Docker container
 - No data is transmitted to external services
 - SQLite database for complete data control
+
+## 🚨 Troubleshooting
+
+### Port Conflicts
+- Development frontend: http://localhost:3000
+- Production frontend: http://localhost:3000 (or your server's port 3000)
+- Backend (both): http://localhost:5000
+
+### Database Persistence
+- Database files are stored in Docker volumes
+- Volume `backend_data` persists across container restarts
+- To reset database: `docker-compose down -v`
+
+### Network Issues
+- Frontend automatically detects hostname for API calls
+- No manual configuration needed for server deployment
+- Make sure port 5000 is accessible from the internet on your server
+- Check that your firewall allows incoming connections on port 5000
+
+### Verification
+After deployment:
+1. Open your browser's developer tools
+2. Go to the Network tab
+3. Try to save a redemption
+4. You should see API calls going to your server (not localhost)
 
 ## 📝 License
 
