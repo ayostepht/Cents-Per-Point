@@ -4,7 +4,14 @@ services:
     image: stephtanner1/cpp-backend:latest
     ports:
       - "5000:5000"
+    volumes:
+      - backend_data:/app/data
   frontend:
     image: stephtanner1/cpp-frontend:latest
     ports:
-      - "3000:3000" 
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend_data: 

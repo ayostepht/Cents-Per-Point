@@ -21,5 +21,13 @@ frontend/package-lock.json
 # Local scripts
 dev.sh
 
+# Local development Docker files
+docker-compose.local.yml
+docker-compose.dev.yml
+backend/Dockerfile.dev
+frontend-vite/Dockerfile.dev
+dev-local.sh
+build-local.sh
+
 # GitHub Actions workflows
 # (Workflow YAMLs are tracked; do not store secrets in this directory)
