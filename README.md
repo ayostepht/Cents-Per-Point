@@ -27,7 +27,7 @@ services:
   frontend:
     image: stephtanner1/cpp-frontend:latest
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - backend
 
@@ -52,7 +52,7 @@ docker volume create cpp_data
 docker run -d --name cpp-backend -p 5000:5000 -v cpp_data:/app/data stephtanner1/cpp-backend:latest
 
 # Start frontend  
-docker run -d --name cpp-frontend -p 3000:80 stephtanner1/cpp-frontend:latest
+docker run -d --name cpp-frontend -p 3000:3000 stephtanner1/cpp-frontend:latest
 ```
 
 ## 📊 How It Works
@@ -110,4 +110,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Questions or Issues?** Please open an issue on GitHub. 
+**Questions or Issues?** Please open an issue on GitHub.
