@@ -1,0 +1,183 @@
+name: 🐛 Bug Report
+description: Report a bug or issue with Cents Per Point
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify the following before submitting your bug report
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported already
+          required: true
+        - label: I have read the troubleshooting section in the README
+          required: true
+        - label: I am using the latest version of the Docker images
+          required: false
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Enter data '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Describe what should have happened instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Describe what actually happened, including any error messages
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment-method
+    attributes:
+      label: Deployment Method
+      description: How are you running Cents Per Point?
+      options:
+        - Docker Compose (recommended)
+        - Docker CLI
+        - From source
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version/Tag
+      description: Which Docker image tag or version are you using?
+      placeholder: "latest, beta, or specific version"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: affected-component
+    attributes:
+      label: Affected Component
+      description: Which part of the application is affected?
+      options:
+        - Frontend (React app)
+        - Backend (API)
+        - Database
+        - Docker setup
+        - Documentation
+        - Not sure
+    validations:
+      required: false
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser (if frontend issue)
+      description: Which browser are you using?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other
+        - Not applicable
+    validations:
+      required: false
+
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What OS are you running on?
+      placeholder: "e.g., Ubuntu 22.04, macOS 13.0, Windows 11"
+    validations:
+      required: false
+
+  - type: textarea
+    id: docker-logs
+    attributes:
+      label: Docker Logs
+      description: If applicable, include relevant Docker logs
+      placeholder: |
+        Run: docker-compose logs
+        Or: docker logs cpp-backend && docker logs cpp-frontend
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: browser-console
+    attributes:
+      label: Browser Console Errors
+      description: If this is a frontend issue, include any console errors
+      placeholder: Open browser dev tools (F12) and copy any error messages from the Console tab
+      render: javascript
+    validations:
+      required: false
+
+  - type: textarea
+    id: network-tab
+    attributes:
+      label: Network Tab (if API issue)
+      description: If API calls are failing, include details from the Network tab
+      placeholder: |
+        1. Open browser dev tools (F12)
+        2. Go to Network tab
+        3. Try to reproduce the issue
+        4. Copy any failed requests and their details
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: |
+        - Screenshots
+        - Configuration details
+        - Recent changes you made
+        - Anything else that might be relevant
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: data-sharing
+    attributes:
+      label: Data Sharing
+      description: Help us understand your setup
+      options:
+        - label: I'm willing to share my docker-compose.yml file (remove any sensitive data first)
+        - label: I'm willing to share my browser's network requests for debugging
+        - label: I can provide additional logs if needed 

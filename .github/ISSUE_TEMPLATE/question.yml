@@ -1,0 +1,74 @@
+name: ❓ Question / Support
+description: Ask a question or get help with Cents Per Point
+title: "[Question]: "
+labels: ["question", "support"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reaching out! Please provide details about your question or issue below.
+        
+        **Before submitting:** Please check the [README](https://github.com/ayostepht/Cents-Per-Point#readme) and [troubleshooting section](https://github.com/ayostepht/Cents-Per-Point#-troubleshooting) first.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have read the README and troubleshooting section
+          required: true
+        - label: I have searched existing issues for similar questions
+          required: true
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: Question Type
+      description: What kind of help do you need?
+      options:
+        - Setup & Installation
+        - Usage & Features
+        - Configuration
+        - Deployment
+        - Data Management
+        - Troubleshooting
+        - Best Practices
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: Please be as specific as possible about what you're trying to do or understand
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Background
+      description: Provide any relevant context
+      placeholder: |
+        - What are you trying to accomplish?
+        - What have you tried so far?
+        - Any relevant setup details
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (if relevant)
+      description: Your setup details
+      placeholder: |
+        - Operating System:
+        - Docker version:
+        - Deployment method:
+        - Browser (if applicable):
+    validations:
+      required: false 
