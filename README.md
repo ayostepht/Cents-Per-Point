@@ -41,7 +41,7 @@ Get up and running in under 2 minutes:
 
 ```bash
 # 1. Download the docker-compose file
-curl -o docker-compose.yml https://raw.githubusercontent.com/yourusername/cost-per-point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/ayostepht/Cents-Per-Point/main/docker-compose.yml
 
 # 2. Start the application
 docker-compose up -d
@@ -64,7 +64,7 @@ That's it! 🎉
 
 1. **Create a project directory:**
    ```bash
-   mkdir cost-per-point && cd cost-per-point
+   mkdir Cents-Per-Point && cd Cents-Per-Point
    ```
 
 2. **Create docker-compose.yml:**
@@ -125,8 +125,8 @@ docker run -d \
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cost-per-point.git
-cd cost-per-point
+git clone https://github.com/ayostepht/Cents-Per-Point.git
+cd Cents-Per-Point
 
 # Start with Docker Compose
 docker-compose up -d
@@ -193,8 +193,8 @@ CPP = (Cash Value - Taxes) ÷ Points × 100
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/cost-per-point.git
-   cd cost-per-point
+   git clone https://github.com/ayostepht/Cents-Per-Point.git
+   cd Cents-Per-Point
    ```
 
 2. **Start development environment:**
@@ -211,7 +211,7 @@ CPP = (Cash Value - Taxes) ÷ Points × 100
 ### Project Structure
 
 ```
-cost-per-point/
+Cents-Per-Point/
 ├── backend/                 # Node.js + Express API
 │   ├── src/
 │   │   ├── models/         # Database models
@@ -330,7 +330,7 @@ For deployment on a remote server:
 
 ### Getting Help
 
-1. Check the [Issues](https://github.com/yourusername/cost-per-point/issues) page
+1. Check the [Issues](https://github.com/ayostepht/Cents-Per-Point/issues) page
 2. Review Docker logs: `docker-compose logs`
 3. Verify system requirements are met
 4. Try the troubleshooting steps above
@@ -363,9 +363,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💬 Support
 
 - 📖 **Documentation**: Check this README and inline code comments
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/cost-per-point/issues)
-- 💡 **Feature Requests**: [Open an issue](https://github.com/yourusername/cost-per-point/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/cost-per-point/discussions)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues)
+- 💡 **Feature Requests**: [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/ayostepht/Cents-Per-Point/discussions)
 
 ---
 
@@ -375,6 +375,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Made with ❤️ for the points and miles community
 
-[Report Bug](https://github.com/ayostepht/cents-per-point/issues) · [Request Feature](https://github.com/ayostepht/cents-per-point/issues) · [Documentation](https://github.com/ayostepht/cents-per-point/wiki)
+[Report Bug](https://github.com/ayostepht/Cents-Per-Point/issues) · [Request Feature](https://github.com/ayostepht/Cents-Per-Point/issues) · [Documentation](https://github.com/ayostepht/Cents-Per-Point/wiki)
 
 </div>
