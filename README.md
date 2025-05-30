@@ -34,6 +34,22 @@
 - 🐳 **Docker Ready** - Easy deployment with Docker Compose
 - 📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
 
+## 🗺️ Roadmap
+
+We're continuously improving Cents Per Point based on community feedback. Here's what's planned:
+
+### 🎯 Near Term (Next 3-6 months)
+- **Enhanced Analytics** - Advanced CPP trends, program performance insights, and custom report builder
+- **Bulk Import/Export** - CSV import for bulk data entry and comprehensive export options
+
+### 🚀 Medium Term (6-12 months)
+- **Point Balance Tracking** - Monitor current balances and expiration dates across programs
+- **Multi-User Support** - Family/household account management with shared tracking
+
+### 💡 Long Term (12+ months)
+- **Progressive Web App** - Mobile app experience with offline capabilities
+
+> 💬 Have ideas for new features? [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues) to share your suggestions!
 
 ## 🚀 Quick Start
 
