@@ -105,6 +105,58 @@ That's it! 🎉
    docker-compose up -d
    ```
 
+   Or create the file manually:
+   ```yaml
+   services:
+     postgres:
+       image: postgres:15-alpine
+       environment:
+         POSTGRES_DB: cpp_database
+         POSTGRES_USER: postgres
+         POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
+       volumes:
+         - postgres_data:/var/lib/postgresql/data
+       ports:
+         - "5432:5432"
+       restart: unless-stopped
+       healthcheck:
+         test: ["CMD-SHELL", "pg_isready -U postgres"]
+         interval: 30s
+         timeout: 10s
+         retries: 3
+
+     backend:
+       image: stephtanner1/cpp-backend
+       environment:
+         DB_HOST: postgres
+         DB_NAME: cpp_database
+         DB_USER: postgres
+         DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
+         DB_PORT: 5432
+       ports:
+         - "5000:5000"
+       # Uncomment the lines below if migrating from previous version with SQLite
+       # volumes:
+         # - backend_data:/app/data
+       depends_on:
+         postgres:
+           condition: service_healthy
+       restart: unless-stopped
+
+     frontend:
+       image: stephtanner1/cpp-frontend
+       ports:
+         - "3000:3000"
+       depends_on:
+         - backend
+       restart: unless-stopped
+
+   volumes:
+     postgres_data:
+     # Uncomment the line below if migrating from SQLite
+     # backend_data:
+   ```
+
 2. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000

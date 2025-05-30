@@ -17,7 +17,7 @@ services:
       retries: 3
 
   backend:
-    image: stephtanner1/cpp-backend:latest
+    image: stephtanner1/cpp-backend
     environment:
       DB_HOST: postgres
       DB_NAME: cpp_database
@@ -25,17 +25,17 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
       DB_PORT: 5432
     ports:
-      - "5000:5000"
-    # Uncomment the lines below if migrating from previous version with SQLite (replace 'backend_data' with your volume name/location)
+      - "5000:5000" 
+    # Optional: Mount SQLite data if migrating from a previous sqlite version
     # volumes:
-      # - backend_data:/app/data
+    #  - backend_data:/app/data 
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
   frontend:
-    image: stephtanner1/cpp-frontend:latest
+    image: stephtanner1/cpp-frontend
     ports:
       - "3000:3000"
     depends_on:
@@ -44,5 +44,4 @@ services:
 
 volumes:
   postgres_data:
-  # Uncomment the line below if migrating from SQLite
-  # backend_data:
+  # backend_data: -- optional, uncomment if migrating from a previous sqlite version
