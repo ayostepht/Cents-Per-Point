@@ -1,5 +1,6 @@
 # Cents Per Point
 
+[![Version](https://img.shields.io/badge/Version-0.1.0-green.svg)](https://github.com/stephtanner1/Cost%20Per%20Point/releases)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://hub.docker.com/u/stephtanner1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://reactjs.org/)
@@ -7,18 +8,17 @@
 
 > A self-hosted web application to track credit card point redemptions and calculate Cents Per Point (CPP) values to optimize your rewards strategy.
 
-![Cents Per Point Dashboard](https://via.placeholder.com/800x400/f8f9fa/6c757d?text=Cost+Per+Point+Dashboard)
+![Dashboard Overview](images/dashboard-screenshot.png)
 
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Screenshots](#-screenshots)
+- [Roadmap](#️-roadmap)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Development](#-development)
 - [API Documentation](#-api-documentation)
-- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Support](#-support)
@@ -34,6 +34,39 @@
 - 🐳 **Docker Ready** - Easy deployment with Docker Compose
 - 📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
 
+## 📸 Screenshots
+
+### 📊 Dashboard - Analytics & Insights
+Track your overall performance with comprehensive analytics and beautiful visualizations.
+
+![Dashboard Overview](images/dashboard-screenshot.png)
+
+### 📋 Redemptions Management
+Easily manage all your point redemptions with powerful filtering and search capabilities.
+
+![Redemptions Management](images/redemptions-screenshot.png)
+
+### 🧮 CPP Calculator
+Calculate Cents Per Point values instantly to make informed redemption decisions.
+
+![CPP Calculator](images/calculator-screenshot.png)
+
+## 🗺️ Roadmap
+
+We're continuously improving Cents Per Point based on community feedback. Here's what's planned:
+
+### 🎯 Near Term (Next 3-6 months)
+- **Enhanced Analytics** - Advanced CPP trends, program performance insights, and custom report builder
+- **Bulk Import/Export** - CSV import for bulk data entry and comprehensive export options
+
+### 🚀 Medium Term (6-12 months)
+- **Point Balance Tracking** - Monitor current balances and expiration dates across programs
+- **Multi-User Support** - Family/household account management with shared tracking
+
+### 💡 Long Term (12+ months)
+- **Progressive Web App** - Mobile app experience with offline capabilities
+
+> 💬 Have ideas for new features? [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues) to share your suggestions!
 
 ## 🚀 Quick Start
 
@@ -154,93 +187,6 @@ docker-compose up -d
 - **Location**: `/app/data/database.sqlite` inside the container
 - **Backup**: Volume persists across container restarts
 
-## 📖 Usage
-
-### Adding Your First Redemption
-
-1. Navigate to the **Redemptions** page
-2. Click **Add Redemption**
-3. Fill in the details:
-   - **Date**: When you redeemed the points
-   - **Source**: Credit card or loyalty program
-   - **Points Used**: Number of points redeemed
-   - **Cash Value**: Total value received
-   - **Taxes/Fees**: Any out-of-pocket costs
-   - **Notes**: Optional context
-
-### Understanding CPP
-
-The app calculates Cents Per Point using:
-```
-CPP = (Cash Value - Taxes) ÷ Points × 100
-```
-
-**Good Values:**
-- 1.5+ cents per point: Good redemption
-- 2.0+ cents per point: Excellent redemption
-- 2.5+ cents per point: Outstanding redemption
-
-### Supported Programs
-
-- **Credit Cards**: Chase UR, Amex MR, Citi ThankYou, Capital One, and more
-- **Airlines**: All major US and international carriers
-- **Hotels**: Marriott, Hilton, Hyatt, IHG, and more
-- **Transfer Partners**: All major point transfer programs
-
-## 🛠️ Development
-
-### Local Development Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/ayostepht/Cents-Per-Point.git
-   cd Cents-Per-Point
-   ```
-
-2. **Start development environment:**
-   ```bash
-   # Create development docker-compose file (not tracked in git)
-   # Copy from docker-compose.yml and modify for development
-   docker-compose -f docker-compose.dev.yml up --build
-   ```
-
-3. **Access development servers:**
-   - Frontend: http://localhost:3000 (Vite dev server)
-   - Backend: http://localhost:5000 (Nodemon auto-restart)
-
-### Project Structure
-
-```
-Cents-Per-Point/
-├── backend/                 # Node.js + Express API
-│   ├── src/
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API routes
-│   │   └── index.js        # Main server file
-│   └── Dockerfile
-├── frontend-vite/          # React + Vite frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components
-│   │   └── constants/      # App constants
-│   └── Dockerfile
-├── docker-compose.yml      # Production deployment
-└── README.md
-```
-
-### Building from Source
-
-```bash
-# Build backend
-docker build -t cpp-backend ./backend
-
-# Build frontend
-docker build -t cpp-frontend ./frontend-vite
-
-# Test locally with custom compose file
-docker-compose -f docker-compose.local.yml up --build
-```
-
 ## 📚 API Documentation
 
 ### Base URL
@@ -256,6 +202,7 @@ http://localhost:5000/api
 |--------|----------|-------------|
 | `GET` | `/redemptions` | Get all redemptions |
 | `POST` | `/redemptions` | Create new redemption |
+| `GET` | `/redemptions/:id` | Get single redemption |
 | `PUT` | `/redemptions/:id` | Update redemption |
 | `DELETE` | `/redemptions/:id` | Delete redemption |
 
@@ -267,73 +214,13 @@ curl -X POST http://localhost:5000/api/redemptions \
   -H "Content-Type: application/json" \
   -d '{
     "date": "2024-01-15",
-    "source": "Chase Ultimate Rewards",
+    "source": "Chase",
     "points": 50000,
     "value": 750,
     "taxes": 50,
     "notes": "Flight to Tokyo"
   }'
 ```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### Port Already in Use
-```bash
-# Check what's using the port
-lsof -i :3000
-lsof -i :5000
-
-# Kill the process or change ports in docker-compose.yml
-```
-
-#### Database Issues
-```bash
-# Reset database (WARNING: This deletes all data)
-docker-compose down -v
-docker-compose up -d
-```
-
-#### Network Issues
-- Ensure ports 3000 and 5000 are not blocked by firewall
-- For server deployment, the frontend automatically detects the hostname
-- Check Docker logs: `docker-compose logs`
-
-#### Container Won't Start
-```bash
-# Check logs
-docker-compose logs backend
-docker-compose logs frontend
-
-# Restart services
-docker-compose restart
-```
-
-### Server Deployment
-
-For deployment on a remote server:
-
-1. **Firewall Configuration:**
-   ```bash
-   # Allow ports (Ubuntu/Debian)
-   sudo ufw allow 3000
-   sudo ufw allow 5000
-   ```
-
-2. **Reverse Proxy (Optional):**
-   Use nginx or Traefik for SSL and custom domains
-
-3. **Verification:**
-   - Check API calls in browser dev tools
-   - Should see requests to your server's IP/domain, not localhost
-
-### Getting Help
-
-1. Check the [Issues](https://github.com/ayostepht/Cents-Per-Point/issues) page
-2. Review Docker logs: `docker-compose logs`
-3. Verify system requirements are met
-4. Try the troubleshooting steps above
 
 ## 🤝 Contributing
 
@@ -349,13 +236,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 6. Push: `git push origin feature/amazing-feature`
 7. Open a Pull Request
 
-### Development Guidelines
-
-- Follow existing code style
-- Add tests for new features
-- Update documentation as needed
-- Test with both development and production Docker setups
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -363,9 +243,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💬 Support
 
 - 📖 **Documentation**: Check this README and inline code comments
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues)
-- 💡 **Feature Requests**: [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/ayostepht/Cents-Per-Point/discussions)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+- 💡 **Feature Requests**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
 
 ---
 
@@ -375,6 +254,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Made with ❤️ for the points and miles community
 
-[Report Bug](https://github.com/ayostepht/Cents-Per-Point/issues) · [Request Feature](https://github.com/ayostepht/Cents-Per-Point/issues) · [Documentation](https://github.com/ayostepht/Cents-Per-Point/wiki)
+[Report Bug](https://github.com/ayostepht/Cost%20Per%20Point/issues) · [Request Feature](https://github.com/ayostepht/Cost%20Per%20Point/issues)
 
 </div>
