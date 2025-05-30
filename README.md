@@ -7,18 +7,17 @@
 
 > A self-hosted web application to track credit card point redemptions and calculate Cents Per Point (CPP) values to optimize your rewards strategy.
 
-![Cents Per Point Dashboard](https://via.placeholder.com/800x400/f8f9fa/6c757d?text=Cost+Per+Point+Dashboard)
+![Dashboard Overview](images/dashboard-screenshot.png)
 
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Screenshots](#-screenshots)
+- [Roadmap](#️-roadmap)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Development](#-development)
 - [API Documentation](#-api-documentation)
-- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Support](#-support)
@@ -184,3 +183,76 @@ docker-compose up -d
 ### Data Persistence
 
 - **Database**: SQLite database stored in Docker volume `backend_data`
+- **Location**: `/app/data/database.sqlite` inside the container
+- **Backup**: Volume persists across container restarts
+
+## 📚 API Documentation
+
+### Base URL
+```
+http://localhost:5000/api
+```
+
+### Endpoints
+
+#### Redemptions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/redemptions` | Get all redemptions |
+| `POST` | `/redemptions` | Create new redemption |
+| `GET` | `/redemptions/:id` | Get single redemption |
+| `PUT` | `/redemptions/:id` | Update redemption |
+| `DELETE` | `/redemptions/:id` | Delete redemption |
+
+#### Example Request
+
+```bash
+# Create a new redemption
+curl -X POST http://localhost:5000/api/redemptions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-01-15",
+    "source": "Chase",
+    "points": 50000,
+    "value": 750,
+    "taxes": 50,
+    "notes": "Flight to Tokyo"
+  }'
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Quick Start for Contributors
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Test locally: `docker-compose -f docker-compose.dev.yml up --build`
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💬 Support
+
+- 📖 **Documentation**: Check this README and inline code comments
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+- 💡 **Feature Requests**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you find it helpful!**
+
+Made with ❤️ for the points and miles community
+
+[Report Bug](https://github.com/ayostepht/Cost%20Per%20Point/issues) · [Request Feature](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+
+</div>
