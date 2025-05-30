@@ -1,17 +1,48 @@
-version: '3.8'
 services:
-  backend:
-    image: stephtanner1/cpp-backend:0.1.0
-    ports:
-      - 5000:5000
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cpp_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
     volumes:
-      - backend_data:/app/data
-  frontend:
-    image: stephtanner1/cpp-frontend:0.1.0
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - 3000:3000
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    image: stephtanner1/cpp-backend:latest
+    environment:
+      DB_HOST: postgres
+      DB_NAME: cpp_database
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
+      DB_PORT: 5432
+    ports:
+      - "5000:5000"
+    # Uncomment the lines below if migrating from previous version with SQLite (replace 'backend_data' with your volume name/location)
+    # volumes:
+      # - backend_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: stephtanner1/cpp-frontend:latest
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
-  backend_data: 
+  postgres_data:
+  # Uncomment the line below if migrating from SQLite
+  # backend_data:

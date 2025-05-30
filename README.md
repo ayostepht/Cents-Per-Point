@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://postgresql.org/)
 
 > A self-hosted web application to track credit card point redemptions and calculate Cents Per Point (CPP) values to optimize your rewards strategy.
 
@@ -17,6 +18,7 @@
 - [Roadmap](#️-roadmap)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
+- [Migration from SQLite](#-migration-from-sqlite)
 - [Configuration](#-configuration)
 - [API Documentation](#-api-documentation)
 - [Contributing](#-contributing)
@@ -32,6 +34,8 @@
 - 🎫 **Travel Credit Support** - Track both point redemptions and travel credit usage
 - 🔒 **Privacy First** - All data stored locally, no external data transmission
 - 🐳 **Docker Ready** - Easy deployment with Docker Compose
+- 🗄️ **PostgreSQL Database** - Robust, scalable database with automatic migration from SQLite
+- 🔄 **Automatic Migration** - Seamlessly upgrade from previous SQLite versions
 - 📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
 
 ## 📸 Screenshots
@@ -66,7 +70,7 @@ We're continuously improving Cents Per Point based on community feedback. Here's
 ### 💡 Long Term (12+ months)
 - **Progressive Web App** - Mobile app experience with offline capabilities
 
-> 💬 Have ideas for new features? [Open an issue](https://github.com/ayostepht/Cents-Per-Point/issues) to share your suggestions!
+> 💬 Have ideas for new features? [Open an issue](https://github.com/stephtanner1/Cost%20Per%20Point/issues) to share your suggestions!
 
 ## 🚀 Quick Start
 
@@ -74,7 +78,7 @@ Get up and running in under 2 minutes:
 
 ```bash
 # 1. Download the docker-compose file
-curl -o docker-compose.yml https://raw.githubusercontent.com/ayostepht/Cents-Per-Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 
 # 2. Start the application
 docker-compose up -d
@@ -90,89 +94,95 @@ That's it! 🎉
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-- 2GB RAM minimum
-- 1GB free disk space
+- 4GB RAM minimum (for PostgreSQL)
+- 2GB free disk space
 
 ### Method 1: Docker Compose (Recommended)
 
-1. **Create a project directory:**
+1. **Download and start:**
    ```bash
-   mkdir Cents-Per-Point && cd Cents-Per-Point
-   ```
-
-2. **Create docker-compose.yml:**
-   ```yaml
-   version: '3.8'
-   services:
-     backend:
-       image: stephtanner1/cpp-backend:latest
-       ports:
-         - "5000:5000"
-       volumes:
-         - backend_data:/app/data
-       restart: unless-stopped
-     frontend:
-       image: stephtanner1/cpp-frontend:latest
-       ports:
-         - "3000:3000"
-       depends_on:
-         - backend
-       restart: unless-stopped
-
-   volumes:
-     backend_data:
-   ```
-
-3. **Start the services:**
-   ```bash
+   curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
    docker-compose up -d
    ```
 
-4. **Access the application:**
+2. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000
+   - Health Check: http://localhost:5000/health
 
-### Method 2: Docker CLI
-
-```bash
-# Create a volume for data persistence
-docker volume create cpp_data
-
-# Start backend
-docker run -d \
-  --name cpp-backend \
-  -p 5000:5000 \
-  -v cpp_data:/app/data \
-  --restart unless-stopped \
-  stephtanner1/cpp-backend:latest
-
-# Start frontend
-docker run -d \
-  --name cpp-frontend \
-  -p 3000:3000 \
-  --restart unless-stopped \
-  stephtanner1/cpp-frontend:latest
-```
-
-### Method 3: From Source
+### Method 2: From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/ayostepht/Cents-Per-Point.git
-cd Cents-Per-Point
+git clone https://github.com/stephtanner1/Cost%20Per%20Point.git
+cd Cost%20Per%20Point
 
 # Start with Docker Compose
 docker-compose up -d
 ```
 
+## 🔄 Migration from SQLite
+
+Upgrading from a previous SQLite version? No problem! The application automatically detects and migrates your existing data.
+
+### For Existing Users
+
+1. **Download the new compose file:**
+   ```bash
+   curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+   ```
+
+2. **Edit the compose file to uncomment volume lines:**
+   
+   In the backend service, uncomment:
+   ```yaml
+   volumes:
+     - backend_data:/app/data  # Replace with your volume name
+   ```
+   
+   In the volumes section, uncomment:
+   ```yaml
+   backend_data:  # Replace with your volume name
+   ```
+
+3. **Start the application:**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Verify migration:**
+   ```bash
+   curl http://localhost:5000/health
+   ```
+
+### Migration Process
+
+- ✅ **Automatic detection** of SQLite database
+- ✅ **Safe migration** with transaction rollback on failure
+- ✅ **Backup creation** of original SQLite file
+- ✅ **Data verification** after migration
+- ✅ **One-time process** with migration flag to prevent re-runs
+
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NODE_ENV` | Environment mode | `production` | No |
-| `PORT` | Backend port | `5000` | No |
+Create a `.env` file for custom configuration:
+
+```bash
+# Database password (recommended for production)
+DB_PASSWORD=your-secure-password
+```
+
+### Default Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_PASSWORD` | PostgreSQL password | `securepassword123` |
+| `DB_HOST` | Database host | `postgres` |
+| `DB_NAME` | Database name | `cpp_database` |
+| `DB_USER` | Database user | `postgres` |
+| `DB_PORT` | Database port | `5432` |
 
 ### Ports
 
@@ -180,18 +190,37 @@ docker-compose up -d
 |---------|------|-------------|
 | Frontend | 3000 | Web interface |
 | Backend | 5000 | REST API |
+| PostgreSQL | 5432 | Database (internal) |
 
 ### Data Persistence
 
-- **Database**: SQLite database stored in Docker volume `backend_data`
-- **Location**: `/app/data/database.sqlite` inside the container
-- **Backup**: Volume persists across container restarts
+- **Database**: PostgreSQL with persistent volume storage
+- **Volume**: `postgres_data` stores all application data
+- **Backup**: Use `docker-compose exec postgres pg_dump` for backups
 
 ## 📚 API Documentation
 
 ### Base URL
 ```
 http://localhost:5000/api
+```
+
+### Health Check
+```bash
+curl http://localhost:5000/health
+```
+
+Response includes database status and migration information:
+```json
+{
+  "status": "OK",
+  "database": "PostgreSQL",
+  "migration": {
+    "status": "completed",
+    "migratedCount": 150,
+    "timestamp": "2024-01-15T10:30:00.000Z"
+  }
+}
 ```
 
 ### Endpoints
@@ -242,9 +271,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💬 Support
 
-- 📖 **Documentation**: Check this README and inline code comments
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
-- 💡 **Feature Requests**: [Open an issue](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+- 📖 **Documentation**: Check this README and [Deployment Guide](DEPLOYMENT.md)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/stephtanner1/Cost%20Per%20Point/issues)
+- 💡 **Feature Requests**: [Open an issue](https://github.com/stephtanner1/Cost%20Per%20Point/issues)
+- 🔄 **Migration Help**: See [Deployment Guide](DEPLOYMENT.md) for detailed migration instructions
 
 ---
 
@@ -254,6 +284,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Made with ❤️ for the points and miles community
 
-[Report Bug](https://github.com/ayostepht/Cost%20Per%20Point/issues) · [Request Feature](https://github.com/ayostepht/Cost%20Per%20Point/issues)
+[Report Bug](https://github.com/stephtanner1/Cost%20Per%20Point/issues) · [Request Feature](https://github.com/stephtanner1/Cost%20Per%20Point/issues)
 
 </div>

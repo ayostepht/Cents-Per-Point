@@ -19,7 +19,6 @@ lerna-debug.log*
 
 # Environment files
 .env
-.env.*
 *.local
 
 # Editor settings
