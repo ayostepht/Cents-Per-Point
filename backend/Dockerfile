@@ -5,8 +5,8 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 COPY package*.json ./
-# Install all dependencies including optional ones for migration
-RUN npm ci --include=optional
+# Install dependencies (optional dependencies included by default)
+RUN npm ci
 COPY src/ ./src/
 ENV NODE_ENV=production
 EXPOSE 5000
