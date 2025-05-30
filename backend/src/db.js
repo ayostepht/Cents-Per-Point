@@ -25,10 +25,13 @@ export async function initDb() {
       points INTEGER NOT NULL,
       value REAL NOT NULL,
       taxes REAL DEFAULT 0,
-      notes TEXT
+      notes TEXT,
+      is_travel_credit INTEGER DEFAULT 0
     );
   `);
   // Add taxes column if upgrading
   await db.exec('ALTER TABLE redemptions ADD COLUMN taxes REAL DEFAULT 0;').catch(() => {});
+  // Add is_travel_credit column if upgrading
+  await db.exec('ALTER TABLE redemptions ADD COLUMN is_travel_credit INTEGER DEFAULT 0;').catch(() => {});
   await db.close();
 } 

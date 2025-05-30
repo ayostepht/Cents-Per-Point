@@ -1,0 +1,194 @@
+name: 💡 Feature Request
+description: Suggest a new feature or enhancement for Cents Per Point
+title: "[Feature]: "
+labels: ["enhancement", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature! Please provide as much detail as possible to help us understand and evaluate your request.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify the following before submitting your feature request
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested already
+          required: true
+        - label: I have checked the project roadmap/milestones for similar planned features
+          required: true
+        - label: This feature aligns with the project's goals (tracking point redemptions and calculating CPP)
+          required: true
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: Feature Summary
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: Briefly describe what you want to be able to do
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Describe the current limitation or pain point that this feature would address.
+        Example: "Currently, I can't easily compare my redemption performance across different time periods..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution in detail
+      placeholder: |
+        How would you like this feature to work? Be as specific as possible.
+        Include details about:
+        - User interface changes
+        - New functionality
+        - How users would interact with it
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature Category
+      description: Which area of the application would this feature affect?
+      options:
+        - Data Entry & Management
+        - Analytics & Reporting
+        - User Interface & Experience
+        - Data Import/Export
+        - Calculations & Metrics
+        - Visualization & Charts
+        - Search & Filtering
+        - Settings & Configuration
+        - API & Integrations
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: Primary User Type
+      description: Who would primarily benefit from this feature?
+      options:
+        - Casual points users (occasional redemptions)
+        - Power users (frequent redemptions, multiple programs)
+        - Data analysts (detailed tracking and analysis)
+        - All users
+        - Developers/Contributors
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my experience
+        - High - Significantly impacts my usage
+        - Critical - Prevents me from using the app effectively
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases & Examples
+      description: Provide specific examples of how you would use this feature
+      placeholder: |
+        Example scenarios:
+        1. "When I want to compare my Chase UR vs Amex MR performance..."
+        2. "After booking a trip, I need to quickly see..."
+        3. "At the end of the year, I want to generate a report that..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered any alternative approaches or workarounds?
+      placeholder: |
+        - Other ways to solve this problem
+        - Current workarounds you're using
+        - Similar features in other apps
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups or References
+      description: Any visual examples, mockups, or references that illustrate your idea
+      placeholder: |
+        - Screenshots from other apps
+        - Hand-drawn sketches
+        - Links to similar features
+        - Detailed descriptions of UI elements
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: implementation-considerations
+    attributes:
+      label: Implementation Considerations
+      description: Technical aspects to consider (check all that apply)
+      options:
+        - label: This feature would require database schema changes
+        - label: This feature would need new API endpoints
+        - label: This feature involves data visualization/charts
+        - label: This feature requires user authentication/permissions
+        - label: This feature involves data import/export
+        - label: This feature needs mobile responsiveness
+        - label: I'm not sure about technical requirements
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple - Minor UI change or small addition
+        - Medium - New component or moderate functionality
+        - Complex - Major feature requiring significant development
+        - Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that would help us understand your request
+      placeholder: |
+        - Links to related issues or discussions
+        - Background on why this is important to you
+        - Timeline considerations
+        - Willingness to contribute to development
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Would you be interested in helping with this feature?
+      options:
+        - label: I'd be willing to help with design/mockups
+        - label: I'd be willing to help with testing
+        - label: I'd be willing to help with documentation
+        - label: I'd be willing to help with development (if I have the skills)
+        - label: I can provide detailed feedback during development 

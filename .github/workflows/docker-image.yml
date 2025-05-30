@@ -45,7 +45,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./frontend-vite
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
 
@@ -53,6 +53,6 @@ jobs:
         if: github.ref == 'refs/heads/beta'
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./frontend-vite
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta 
