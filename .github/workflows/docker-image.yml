@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - beta
+    tags:
+      - 'v*'
 
 jobs:
   build-and-push:
@@ -25,6 +27,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Build and push backend image (main)
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
@@ -41,6 +48,16 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:beta
 
+      - name: Build and push backend image (version tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:${{ steps.extract_version.outputs.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
+
       - name: Build and push frontend image (main)
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
@@ -55,4 +72,14 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta 
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta
+
+      - name: Build and push frontend image (version tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-vite
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:${{ steps.extract_version.outputs.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest 

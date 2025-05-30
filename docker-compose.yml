@@ -1,13 +1,13 @@
 version: '3.8'
 services:
   backend:
-    image: stephtanner1/cpp-backend:latest
+    image: stephtanner1/cpp-backend:0.1.0
     ports:
       - 5000:5000
     volumes:
       - backend_data:/app/data
   frontend:
-    image: stephtanner1/cpp-frontend:latest
+    image: stephtanner1/cpp-frontend:0.1.0
     ports:
       - 3000:3000
     depends_on:
