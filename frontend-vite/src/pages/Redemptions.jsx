@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
-import { PlusCircle, Edit2, Trash2, Search, CheckCircle } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { PlusCircle, Edit2, Trash2, Search, CheckCircle, Download } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { MultiSelect } from 'react-multi-select-component';
@@ -340,13 +340,21 @@ export default function Redemptions() {
             >
               Clear Filters
             </button>
-            <button
-              onClick={() => setAdding(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg ml-auto mt-5"
-              type="button"
-            >
-              <PlusCircle size={22} /> Add New Redemption
-            </button>
+            <div className="flex gap-3 ml-auto mt-5">
+              <Link
+                to="/import-export"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg"
+              >
+                <Download size={22} /> Import/Export
+              </Link>
+              <button
+                onClick={() => setAdding(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg"
+                type="button"
+              >
+                <PlusCircle size={22} /> Add New Redemption
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse bg-white rounded-xl shadow overflow-hidden">

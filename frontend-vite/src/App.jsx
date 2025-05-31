@@ -3,8 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Dashboard from './pages/Dashboard';
 import Redemptions from './pages/Redemptions';
 import ShouldIBookIt from './pages/ShouldIBookIt';
+import ImportExport from './pages/ImportExport';
 import './index.css';
-import { Home, List, Calculator } from 'lucide-react';
+import { Home, List, Calculator, Download } from 'lucide-react';
 
 function NavBar() {
   const location = useLocation();
@@ -12,6 +13,7 @@ function NavBar() {
     { to: '/', label: 'Dashboard', icon: <Home size={20} /> },
     { to: '/redemptions', label: 'Redemptions', icon: <List size={20} /> },
     { to: '/should-i-book-it', label: 'Calculator', icon: <Calculator size={20} /> },
+    { to: '/import-export', label: 'Import/Export', icon: <Download size={20} /> },
   ];
   return (
     <header className="w-full bg-white sticky top-0 z-40 border-b border-gray-200 shadow-sm">
@@ -51,6 +53,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/redemptions" element={<Redemptions />} />
           <Route path="/should-i-book-it" element={<ShouldIBookIt />} />
+          <Route path="/import-export" element={<ImportExport />} />
         </Routes>
       </div>
     </Router>

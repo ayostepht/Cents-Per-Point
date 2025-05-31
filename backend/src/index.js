@@ -6,6 +6,7 @@ import cors from 'cors';
 import { initDb, closeDb, getDb } from './db.js';
 import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
+import importExportRouter from './routes/import-export.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
+app.use('/api/import-export', importExportRouter);
 
 // Health check with detailed migration status
 app.get('/health', (req, res) => {
