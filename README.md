@@ -1,6 +1,6 @@
 # Cents Per Point
 
-[![Version](https://img.shields.io/badge/Version-0.1.0-green.svg)](https://github.com/stephtanner1/Cost%20Per%20Point/releases)
+[![Version](https://img.shields.io/badge/Version-0.2.1-green.svg)](https://github.com/stephtanner1/Cost%20Per%20Point/releases)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://hub.docker.com/u/stephtanner1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://reactjs.org/)
