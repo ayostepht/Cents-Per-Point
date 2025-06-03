@@ -76,11 +76,9 @@ export default function Redemptions() {
   }, []);
 
   const fetchRedemptions = () => {
-    console.log('Fetching redemptions...');
     setLoading(true);
     axios.get(`${API_URL}/api/redemptions`)
       .then(res => {
-        console.log('Redemptions fetched successfully:', res.data);
         setRedemptions(res.data);
         setLoading(false);
       })
@@ -178,16 +176,6 @@ export default function Redemptions() {
     }
     
     try {
-      console.log('Attempting to save redemption:', {
-        date: addForm.date,
-        source: addForm.source,
-        points: addForm.is_travel_credit ? 0 : Number(addForm.points),
-        value: Number(addForm.value),
-        taxes: Number(addForm.taxes),
-        notes: addForm.notes,
-        is_travel_credit: addForm.is_travel_credit
-      });
-      
       const response = await axios.post(`${API_URL}/api/redemptions`, {
         date: addForm.date,
         source: addForm.source,
@@ -197,8 +185,6 @@ export default function Redemptions() {
         notes: addForm.notes,
         is_travel_credit: addForm.is_travel_credit
       });
-      
-      console.log('Redemption saved successfully:', response.data);
       
       setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
       setAdding(false);
@@ -238,14 +224,6 @@ export default function Redemptions() {
     if (!r.is_travel_credit && r.cpp && (!isNaN(Number(r.cpp))) && (Number(r.cpp) < cppRange[0] || Number(r.cpp) > cppRange[1])) return false;
     return true;
   });
-
-  // Debug logging
-  console.log('Current filters:', filters);
-  console.log('CPP Range:', cppRange);
-  console.log('Total redemptions:', redemptions.length);
-  console.log('Table data (with cpp):', tableData.length);
-  console.log('Filtered data:', filteredData.length);
-  console.log('Recent redemptions (first 3):', tableData.slice(0, 3));
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {

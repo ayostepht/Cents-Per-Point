@@ -110,33 +110,38 @@ router.post('/analyze', upload.single('csvFile'), async (req, res) => {
       return res.status(400).json({ error: 'CSV file is empty' });
     }
 
-    // Parse the first line to get headers
+    // Parse the first line to get headers using proper CSV parsing
     const headerLine = lines[0];
-    const headers = headerLine.split(',').map(header => 
-      header.trim().replace(/^["']|["']$/g, '') // Remove quotes
-    );
+    let headers = parseCSVLine(headerLine);
 
-    // Get a few sample rows for preview
+    // Get a few sample rows for preview using proper CSV parsing
     const sampleRows = [];
     for (let i = 1; i < Math.min(6, lines.length); i++) {
-      const row = lines[i].split(',').map(cell => 
-        cell.trim().replace(/^["']|["']$/g, '') // Remove quotes
-      );
+      let row = parseCSVLine(lines[i]);
+      
+      // Try to reconstruct split values
+      row = reconstructValues(null, row);
+      
+      // Ensure row has same length as headers (pad with empty strings if needed)
+      while (row.length < headers.length) {
+        row.push('');
+      }
+      
       sampleRows.push(row);
     }
 
     // Define the required and optional fields for mapping
     const fieldDefinitions = {
       required: [
-        { key: 'date', label: 'Date', description: 'Redemption date (YYYY-MM-DD format)' },
         { key: 'source', label: 'Source', description: 'Credit card or loyalty program' },
-        { key: 'value', label: 'Cash Value', description: 'Total cash value in dollars' }
+        { key: 'points', label: 'Points Used', description: 'Number of points used' }
       ],
       optional: [
-        { key: 'points', label: 'Points', description: 'Number of points used (0 for travel credits)' },
-        { key: 'taxes', label: 'Taxes/Fees', description: 'Additional taxes or fees in dollars' },
+        { key: 'date', label: 'Date', description: 'Redemption date (defaults to current date if not mapped)' },
+        { key: 'value', label: 'Cash Value', description: 'Total cash value in dollars (defaults to 0)' },
+        { key: 'taxes', label: 'Taxes/Fees', description: 'Additional taxes or fees in dollars (defaults to 0)' },
         { key: 'notes', label: 'Notes', description: 'Additional notes or description' },
-        { key: 'is_travel_credit', label: 'Travel Credit/Free Night', description: 'Whether this is a travel credit or free night award' }
+        { key: 'is_travel_credit', label: 'Travel Credit/Free Night', description: 'Whether this is a travel credit or free night award (defaults to false)' }
       ]
     };
 
@@ -176,14 +181,17 @@ router.post('/analyze', upload.single('csvFile'), async (req, res) => {
     console.error('CSV analysis error:', error);
     res.status(500).json({ 
       error: 'Failed to analyze CSV file',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
 
 // Import redemptions from CSV with column mapping
-router.post('/import', upload.single('csvFile'), async (req, res) => {
-  if (!req.file) {
+router.post('/import', upload.any(), async (req, res) => {
+  // Find the CSV file in the uploaded files
+  const file = req.files?.find(f => f.fieldname === 'csvFile' || f.fieldname === 'file');
+  if (!file) {
     return res.status(400).json({ error: 'No CSV file provided' });
   }
 
@@ -200,8 +208,8 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
     return res.status(400).json({ error: 'Invalid column mappings format' });
   }
 
-  // Validate required mappings
-  const requiredFields = ['date', 'source', 'value'];
+  // Validate required mappings - only source and points are required
+  const requiredFields = ['source', 'points'];
   const missingFields = requiredFields.filter(field => 
     mappings[field] === undefined || mappings[field] === null || mappings[field] === ''
   );
@@ -209,7 +217,8 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
   if (missingFields.length > 0) {
     return res.status(400).json({ 
       error: 'Missing required field mappings',
-      missingFields: missingFields
+      missingFields: missingFields,
+      message: 'Required fields: Source (credit card/program) and Points Used'
     });
   }
 
@@ -219,29 +228,39 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
   try {
     const results = [];
     const errors = [];
+    const warnings = [];
     let rowNumber = 1; // Start at 1 for header row
 
     // Parse CSV from buffer
-    const csvContent = req.file.buffer.toString();
+    const csvContent = file.buffer.toString();
     const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    // Get headers for reference
+    const headers = parseCSVLine(lines[0]);
     
     // Skip header row
     for (let i = 1; i < lines.length; i++) {
       rowNumber++;
-      const row = lines[i].split(',').map(cell => 
-        cell.trim().replace(/^["']|["']$/g, '') // Remove quotes
-      );
+      let row = parseCSVLine(lines[i]);
+      
+      // Try to reconstruct split values
+      row = reconstructValues(null, row);
+      
+      // Ensure row has same length as headers (pad with empty strings if needed)
+      while (row.length < headers.length) {
+        row.push('');
+      }
       
       // Map the row data using the provided mappings
       const mappedData = {};
       
       // Map required fields
-      mappedData.date = mappings.date !== undefined ? row[mappings.date] : '';
       mappedData.source = mappings.source !== undefined ? row[mappings.source] : '';
-      mappedData.value = mappings.value !== undefined ? row[mappings.value] : '';
-      
-      // Map optional fields
       mappedData.points = mappings.points !== undefined ? row[mappings.points] : '';
+      
+      // Map optional fields (ignore if not mapped)
+      mappedData.date = mappings.date !== undefined ? row[mappings.date] : '';
+      mappedData.value = mappings.value !== undefined ? row[mappings.value] : '';
       mappedData.taxes = mappings.taxes !== undefined ? row[mappings.taxes] : '';
       mappedData.notes = mappings.notes !== undefined ? row[mappings.notes] : '';
       mappedData.is_travel_credit = mappings.is_travel_credit !== undefined ? row[mappings.is_travel_credit] : '';
@@ -250,18 +269,25 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
       const validation = validateRow(mappedData, rowNumber);
       if (validation.errors.length > 0) {
         errors.push(...validation.errors);
-        continue;
+        continue; // Skip this row due to fatal errors
+      }
+      
+      // Collect warnings but don't skip the row
+      if (validation.warnings.length > 0) {
+        warnings.push(...validation.warnings);
       }
       
       results.push(validation.data);
     }
 
-    // If there are validation errors, return them without importing
+    // If there are fatal errors, return them without importing
     if (errors.length > 0) {
       return res.status(400).json({ 
         error: 'Validation failed',
         errors: errors,
-        message: `Found ${errors.length} validation error(s). Please fix these issues and try again.`
+        warnings: warnings,
+        message: `Found ${errors.length} fatal error(s). Please fix these issues and try again.`,
+        details: { errors, warnings }
       });
     }
 
@@ -288,13 +314,21 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
     // Commit transaction
     await client.query('COMMIT');
 
-    res.json({
+    const response = {
       success: true,
       imported: imported,
       skipped: skipped,
       total: results.length,
       message: `Successfully imported ${imported} redemptions${skipped > 0 ? `, skipped ${skipped} due to errors` : ''}.`
-    });
+    };
+
+    // Include warnings in response if any
+    if (warnings.length > 0) {
+      response.warnings = warnings;
+      response.message += ` Note: ${warnings.length} warning(s) were automatically handled.`;
+    }
+
+    res.json(response);
 
   } catch (error) {
     await client.query('ROLLBACK');
@@ -311,68 +345,163 @@ router.post('/import', upload.single('csvFile'), async (req, res) => {
 // Validation function for CSV rows
 function validateRow(data, rowNumber) {
   const errors = [];
+  const warnings = [];
   const cleanData = {};
 
-  // Validate date
+  // Validate date (optional, defaults to current date)
   if (!data.date || data.date.trim() === '') {
-    errors.push(`Row ${rowNumber}: Date is required`);
+    // Default to current date
+    cleanData.date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
   } else {
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(data.date.trim())) {
-      errors.push(`Row ${rowNumber}: Date must be in YYYY-MM-DD format`);
-    } else {
-      const date = new Date(data.date.trim());
-      if (isNaN(date.getTime())) {
-        errors.push(`Row ${rowNumber}: Invalid date`);
-      } else {
-        cleanData.date = data.date.trim();
+    let dateStr = data.date.trim();
+    // Handle MM/DD/YYYY and MM/DD/YY formats and convert to YYYY-MM-DD
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const month = parts[0].padStart(2, '0');
+        const day = parts[1].padStart(2, '0');
+        let year = parts[2];
+        
+        // Handle 2-digit years (assume 20xx for years 00-99)
+        if (year.length === 2) {
+          const twoDigitYear = parseInt(year);
+          if (twoDigitYear >= 0 && twoDigitYear <= 99) {
+            year = `20${year.padStart(2, '0')}`;
+          }
+        }
+        
+        dateStr = `${year}-${month}-${day}`;
       }
+    }
+    
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      warnings.push(`Row ${rowNumber}: Invalid date format '${data.date.trim()}', using current date instead`);
+      cleanData.date = new Date().toISOString().split('T')[0];
+    } else {
+      cleanData.date = dateStr;
     }
   }
 
-  // Validate source
+  // Validate source (required)
   if (!data.source || data.source.trim() === '') {
     errors.push(`Row ${rowNumber}: Source is required`);
   } else {
     cleanData.source = data.source.trim();
   }
 
-  // Validate points
-  const points = parseFloat(data.points);
-  if (isNaN(points) || points < 0) {
-    errors.push(`Row ${rowNumber}: Points must be a valid number >= 0`);
+  // Validate points (required)
+  if (!data.points || data.points.trim() === '') {
+    errors.push(`Row ${rowNumber}: Points is required`);
   } else {
-    cleanData.points = Math.round(points);
+    const pointsStr = data.points.replace(/[,$]/g, ''); // Remove commas and dollar signs
+    const points = parseFloat(pointsStr);
+    if (isNaN(points) || points < 0) {
+      errors.push(`Row ${rowNumber}: Points must be a valid number >= 0`);
+    } else {
+      cleanData.points = Math.round(points);
+    }
   }
 
-  // Validate value
-  const value = parseFloat(data.value);
-  if (isNaN(value) || value <= 0) {
-    errors.push(`Row ${rowNumber}: Value must be a valid number > 0`);
-  } else {
-    cleanData.value = value;
+  // Validate value (optional, defaults to 0)
+  let value = 0;
+  if (data.value && data.value.trim() !== '') {
+    const valueStr = data.value.replace(/[,$]/g, ''); // Remove commas and dollar signs
+    value = parseFloat(valueStr);
+    if (isNaN(value) || value < 0) {
+      warnings.push(`Row ${rowNumber}: Value must be a valid number >= 0, defaulting to 0`);
+      value = 0;
+    }
   }
+  cleanData.value = value;
 
-  // Validate taxes (optional)
-  const taxes = data.taxes ? parseFloat(data.taxes) : 0;
-  if (isNaN(taxes) || taxes < 0) {
-    errors.push(`Row ${rowNumber}: Taxes must be a valid number >= 0`);
-  } else {
-    cleanData.taxes = taxes;
+  // Validate taxes (optional, defaults to 0)
+  let taxes = 0;
+  if (data.taxes && data.taxes.trim() !== '') {
+    const taxesStr = data.taxes.replace(/[,$]/g, ''); // Remove commas and dollar signs
+    taxes = parseFloat(taxesStr);
+    if (isNaN(taxes) || taxes < 0) {
+      warnings.push(`Row ${rowNumber}: Taxes must be a valid number >= 0, defaulting to 0`);
+      taxes = 0;
+    }
   }
+  cleanData.taxes = taxes;
 
   // Notes (optional)
   cleanData.notes = data.notes ? data.notes.trim() : '';
 
-  // Validate is_travel_credit (optional)
+  // Validate is_travel_credit (optional, defaults to false)
   const travelCredit = data.is_travel_credit ? data.is_travel_credit.trim().toLowerCase() : 'false';
-  if (!['true', 'false', '1', '0', 'yes', 'no'].includes(travelCredit)) {
-    errors.push(`Row ${rowNumber}: is_travel_credit must be true/false, 1/0, or yes/no`);
+  if (!['true', 'false', '1', '0', 'yes', 'no', ''].includes(travelCredit)) {
+    warnings.push(`Row ${rowNumber}: is_travel_credit must be true/false, 1/0, or yes/no, defaulting to false`);
+    cleanData.is_travel_credit = false;
   } else {
     cleanData.is_travel_credit = ['true', '1', 'yes'].includes(travelCredit);
   }
 
-  return { errors, data: cleanData };
+  return { errors, warnings, data: cleanData };
+}
+
+// Proper CSV parsing function that handles quoted fields and commas
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  let i = 0;
+  
+  while (i < line.length) {
+    const char = line[i];
+    
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // Escaped quote
+        current += '"';
+        i += 2;
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+        i++;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // End of field
+      result.push(current.trim());
+      current = '';
+      i++;
+    } else {
+      current += char;
+      i++;
+    }
+  }
+  
+  // Add the last field
+  result.push(current.trim());
+  
+  return result;
+}
+
+// Function to clean and reconstruct values that may have been split by commas
+function reconstructValues(headers, row) {
+  // Look for patterns like "$3" followed by "455.00" and combine them
+  const cleanedRow = [...row];
+  
+  for (let i = 0; i < cleanedRow.length - 1; i++) {
+    const current = cleanedRow[i];
+    const next = cleanedRow[i + 1];
+    
+    // Check if current looks like a partial dollar amount and next looks like the remainder
+    if (current && current.match(/^\$\d+$/) && next && next.match(/^\d+\.\d{2}$/)) {
+      // Combine them
+      cleanedRow[i] = `${current},${next}`;
+      cleanedRow.splice(i + 1, 1); // Remove the next element
+      
+      // Also remove the corresponding header if it exists
+      if (headers && headers.length > i + 1) {
+        headers.splice(i + 1, 1);
+      }
+    }
+  }
+  
+  return cleanedRow;
 }
 
 export default router; 

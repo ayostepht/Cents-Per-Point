@@ -9,10 +9,25 @@ import redemptionsRouter from './routes/redemptions.js';
 import importExportRouter from './routes/import-export.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 5001);
 
-app.use(cors());
-app.use(express.json());
+// Configure CORS
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow both frontend ports
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Increase JSON payload limit for file uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
