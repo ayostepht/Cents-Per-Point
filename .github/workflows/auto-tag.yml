@@ -32,7 +32,7 @@ jobs:
           LATEST_TAG=$(git describe --tags --abbrev=0)
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create new tag
+      - name: Create new tag and update docs
         id: create_tag
         run: |
           LATEST_TAG=${{ steps.get_latest_tag.outputs.latest_tag }}
@@ -45,18 +45,12 @@ jobs:
           NEW_PATCH=$((PATCH + 1))
           NEW_TAG="v$MAJOR.$MINOR.$NEW_PATCH"
           
-          # Create and push the new tag
-          git tag -a $NEW_TAG -m "Security update: $NEW_TAG"
-          git push origin $NEW_TAG
-          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
-
-      - name: Update RELEASE_NOTES.md
-        run: |
-          NEW_TAG=${{ steps.create_tag.outputs.new_tag }}
+          # Update version badge in README.md
+          sed -i "s/Version-[0-9]\+\.[0-9]\+\.[0-9]\+/Version-${NEW_TAG#v}/" README.md
+          
+          # Update RELEASE_NOTES.md
           PR_NUMBER=${{ github.event.pull_request.number }}
           PR_TITLE=${{ github.event.pull_request.title }}
-          
-          # Add new section to RELEASE_NOTES.md
           cat << EOF >> docs/RELEASE_NOTES.md
           
           ## $NEW_TAG
@@ -66,10 +60,17 @@ jobs:
           
           EOF
           
-          # Commit and push changes
-          git add docs/RELEASE_NOTES.md
-          git commit -m "docs: update release notes for $NEW_TAG"
-          git push origin main
+          # Commit all changes
+          git add README.md docs/RELEASE_NOTES.md
+          git commit -m "docs: update version badge and release notes for $NEW_TAG"
+          
+          # Create and push the new tag
+          git tag -a $NEW_TAG -m "Security update: $NEW_TAG"
+          
+          # Push everything in one go
+          git push origin main $NEW_TAG
+          
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
       - name: Trigger Docker Build
         run: |
