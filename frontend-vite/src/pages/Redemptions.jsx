@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation, Link } from 'react-router-dom';
-import { PlusCircle, Edit2, Trash2, Search, CheckCircle, Download } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, Search, CheckCircle, Download, Save } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { MultiSelect } from 'react-multi-select-component';
@@ -109,7 +109,7 @@ export default function Redemptions() {
   const handleEdit = r => {
     setEditingId(r.id);
     setEditForm({
-      date: r.date,
+      date: new Date(r.date).toISOString().split('T')[0],
       source: r.source,
       points: r.points,
       taxes: r.taxes,
@@ -385,10 +385,19 @@ export default function Redemptions() {
                     <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min={editForm.is_travel_credit ? 0 : 1} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td><input type="number" name="taxes" value={editForm.taxes} onChange={handleEditChange} min="0" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td><input type="number" name="value" value={editForm.value} onChange={handleEditChange} min="0.01" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
-                    <td>{editForm.is_travel_credit ? ((editForm.value - editForm.taxes) * 100).toFixed(1) + '¢' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+                    <td>{editForm.is_travel_credit ? 'N/A' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+                    <td className="text-center">
+                      <input 
+                        type="checkbox" 
+                        name="is_travel_credit" 
+                        checked={!!editForm.is_travel_credit} 
+                        onChange={handleEditChange} 
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                      />
+                    </td>
                     <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td className="flex gap-2 items-center">
-                      <button onClick={() => handleEditSave(r.id)} className="text-green-600"><Edit2 size={18} /></button>
+                      <button onClick={() => handleEditSave(r.id)} className="text-green-600" title="Save"><Save size={18} /></button>
                       <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
                     </td>
                   </tr>
