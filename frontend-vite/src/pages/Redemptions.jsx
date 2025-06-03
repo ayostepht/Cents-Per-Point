@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
-import { PlusCircle, Edit2, Trash2, Search, CheckCircle } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { PlusCircle, Edit2, Trash2, Search, CheckCircle, Download, Save } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { MultiSelect } from 'react-multi-select-component';
@@ -76,11 +76,9 @@ export default function Redemptions() {
   }, []);
 
   const fetchRedemptions = () => {
-    console.log('Fetching redemptions...');
     setLoading(true);
     axios.get(`${API_URL}/api/redemptions`)
       .then(res => {
-        console.log('Redemptions fetched successfully:', res.data);
         setRedemptions(res.data);
         setLoading(false);
       })
@@ -111,7 +109,7 @@ export default function Redemptions() {
   const handleEdit = r => {
     setEditingId(r.id);
     setEditForm({
-      date: r.date,
+      date: new Date(r.date).toISOString().split('T')[0],
       source: r.source,
       points: r.points,
       taxes: r.taxes,
@@ -178,16 +176,6 @@ export default function Redemptions() {
     }
     
     try {
-      console.log('Attempting to save redemption:', {
-        date: addForm.date,
-        source: addForm.source,
-        points: addForm.is_travel_credit ? 0 : Number(addForm.points),
-        value: Number(addForm.value),
-        taxes: Number(addForm.taxes),
-        notes: addForm.notes,
-        is_travel_credit: addForm.is_travel_credit
-      });
-      
       const response = await axios.post(`${API_URL}/api/redemptions`, {
         date: addForm.date,
         source: addForm.source,
@@ -197,8 +185,6 @@ export default function Redemptions() {
         notes: addForm.notes,
         is_travel_credit: addForm.is_travel_credit
       });
-      
-      console.log('Redemption saved successfully:', response.data);
       
       setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
       setAdding(false);
@@ -238,14 +224,6 @@ export default function Redemptions() {
     if (!r.is_travel_credit && r.cpp && (!isNaN(Number(r.cpp))) && (Number(r.cpp) < cppRange[0] || Number(r.cpp) > cppRange[1])) return false;
     return true;
   });
-
-  // Debug logging
-  console.log('Current filters:', filters);
-  console.log('CPP Range:', cppRange);
-  console.log('Total redemptions:', redemptions.length);
-  console.log('Table data (with cpp):', tableData.length);
-  console.log('Filtered data:', filteredData.length);
-  console.log('Recent redemptions (first 3):', tableData.slice(0, 3));
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
@@ -340,13 +318,21 @@ export default function Redemptions() {
             >
               Clear Filters
             </button>
-            <button
-              onClick={() => setAdding(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg ml-auto mt-5"
-              type="button"
-            >
-              <PlusCircle size={22} /> Add New Redemption
-            </button>
+            <div className="flex gap-3 ml-auto mt-5">
+              <Link
+                to="/import-export"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg"
+              >
+                <Download size={22} /> Import/Export
+              </Link>
+              <button
+                onClick={() => setAdding(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow text-lg"
+                type="button"
+              >
+                <PlusCircle size={22} /> Add New Redemption
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse bg-white rounded-xl shadow overflow-hidden">
@@ -399,10 +385,19 @@ export default function Redemptions() {
                     <td><input type="number" name="points" value={editForm.points} onChange={handleEditChange} min={editForm.is_travel_credit ? 0 : 1} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td><input type="number" name="taxes" value={editForm.taxes} onChange={handleEditChange} min="0" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td><input type="number" name="value" value={editForm.value} onChange={handleEditChange} min="0.01" step="0.01" className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
-                    <td>{editForm.is_travel_credit ? ((editForm.value - editForm.taxes) * 100).toFixed(1) + '¢' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+                    <td>{editForm.is_travel_credit ? 'N/A' : (editForm.points > 0 && editForm.value !== '' && editForm.taxes !== '' ? (((editForm.value - editForm.taxes) / editForm.points) * 100).toFixed(1) + '¢/pt' : '')}</td>
+                    <td className="text-center">
+                      <input 
+                        type="checkbox" 
+                        name="is_travel_credit" 
+                        checked={!!editForm.is_travel_credit} 
+                        onChange={handleEditChange} 
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                      />
+                    </td>
                     <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td className="flex gap-2 items-center">
-                      <button onClick={() => handleEditSave(r.id)} className="text-green-600"><Edit2 size={18} /></button>
+                      <button onClick={() => handleEditSave(r.id)} className="text-green-600" title="Save"><Save size={18} /></button>
                       <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
                     </td>
                   </tr>

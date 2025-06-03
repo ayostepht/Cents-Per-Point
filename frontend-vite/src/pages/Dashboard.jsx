@@ -8,6 +8,82 @@ const COLORS = ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#8884d8'
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
+// Custom date formatter for cleaner x-axis labels
+const formatDateForChart = (dateStr) => {
+  const date = new Date(dateStr);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = date.getFullYear().toString().slice(-2);
+  return `${month}/${day}/${year}`;
+};
+
+// Custom tick formatter for x-axis that shows fewer labels
+const formatDateTick = (tickItem, index, ticks) => {
+  // Only show every nth label based on total count to prevent crowding
+  const totalTicks = ticks.length;
+  let interval = 1;
+  if (totalTicks > 10) interval = Math.ceil(totalTicks / 8);
+  if (totalTicks > 20) interval = Math.ceil(totalTicks / 6);
+  if (totalTicks > 30) interval = Math.ceil(totalTicks / 5);
+  
+  if (index % interval === 0) {
+    return formatDateForChart(tickItem);
+  }
+  return '';
+};
+
+// Custom label for pie chart with better positioning
+const renderCustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }) => {
+  if (percent < 0.05) return null; // Don't show labels for slices less than 5%
+  
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontSize="12"
+      fontWeight="bold"
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
+// Custom tooltip for pie chart with Type, %, Amount
+const CustomPieTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const { name, value, payload: pieData } = data;
+    
+    // Calculate total from all pie data
+    const total = pieData.data?.reduce((sum, item) => sum + item.value, 0) || 0;
+    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+    
+    return (
+      <div style={{ 
+        backgroundColor: 'white', 
+        border: '1px solid #ccc', 
+        borderRadius: '8px',
+        padding: '12px',
+        textAlign: 'left',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <div><strong>Type:</strong> {name}</div>
+        <div><strong>Amount:</strong> {value.toLocaleString()} points</div>
+        <div><strong>Percentage:</strong> {percentage}%</div>
+      </div>
+    );
+  }
+  return null;
+};
+
 function MetricCard({ title, value, icon }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow border border-gray-100 flex items-center gap-4">
@@ -63,15 +139,42 @@ export default function Dashboard() {
     return Array.from(sourceMap.values()).map(s => ({ name: s.name, CPP: parseFloat((s.totalCpp / s.count).toFixed(2)) }));
   }, [filtered]);
 
-  const cppByDate = useMemo(() => Object.values(filtered.reduce((acc, r) => {
-    if (!acc[r.date]) acc[r.date] = { date: r.date, cppSum: 0, count: 0 };
-    const cpp = r.points > 0 ? ((r.value - (r.taxes || 0)) / r.points) * 100 : null;
-    if (cpp !== null && !isNaN(cpp)) {
-      acc[r.date].cppSum += cpp;
-      acc[r.date].count += 1;
-    }
-    return acc;
-  }, {})).map(d => ({ date: d.date, cpp: d.count ? d.cppSum / d.count : null })).sort((a, b) => a.date.localeCompare(b.date)), [filtered]);
+  // Improved CPP by date calculation for continuous line
+  const cppByDate = useMemo(() => {
+    const dateMap = new Map();
+    
+    // Group redemptions by date and calculate daily CPP
+    filtered.forEach(r => {
+      const date = r.date;
+      if (!dateMap.has(date)) {
+        dateMap.set(date, { date, cppSum: 0, count: 0, totalValue: 0, totalPoints: 0 });
+      }
+      
+      const dayData = dateMap.get(date);
+      if (r.points > 0) {
+        const cpp = ((r.value - (r.taxes || 0)) / r.points) * 100;
+        if (!isNaN(cpp)) {
+          dayData.cppSum += cpp;
+          dayData.count += 1;
+          dayData.totalValue += (r.value - (r.taxes || 0));
+          dayData.totalPoints += r.points;
+        }
+      }
+      dateMap.set(date, dayData);
+    });
+
+    // Convert to array and sort by date
+    const result = Array.from(dateMap.values())
+      .filter(d => d.count > 0)
+      .map(d => ({
+        date: d.date,
+        cpp: parseFloat((d.cppSum / d.count).toFixed(2)),
+        formattedDate: formatDateForChart(d.date)
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return result;
+  }, [filtered]);
 
   const pointsByDateRaw = useMemo(() => Object.values(filtered.reduce((acc, r) => {
     if (!acc[r.date]) acc[r.date] = { date: r.date, points: 0 };
@@ -82,7 +185,11 @@ export default function Dashboard() {
   let cumulative = 0;
   const pointsByDate = pointsByDateRaw.map(d => {
     cumulative += d.points;
-    return { date: d.date, points: cumulative };
+    return { 
+      date: d.date, 
+      points: cumulative,
+      formattedDate: formatDateForChart(d.date)
+    };
   });
 
   const uniqueSources = Array.from(new Set(filtered.map(r => r.source))).filter(Boolean);
@@ -154,7 +261,6 @@ export default function Dashboard() {
                 <XAxis dataKey="name" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
                 <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
                 <Tooltip />
-                <Legend wrapperStyle={{fontSize: "12px"}} />
                 <Bar dataKey="CPP" fill="#8884d8">
                   {cppBySourceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -166,13 +272,30 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm p-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4">CPP Over Time</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={cppByDate} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+              <LineChart data={cppByDate} margin={{ top: 5, right: 20, left: 10, bottom: 50 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
+                <XAxis 
+                  dataKey="formattedDate"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tick={{fontSize: 10}}
+                  tickFormatter={(value, index) => formatDateTick(cppByDate[index]?.date || value, index, cppByDate)}
+                />
                 <YAxis label={{ value: 'CPP (¢)', angle: -90, position: 'insideLeft', offset:10, fontSize: 12 }} tick={{fontSize: 10}} />
-                <Tooltip />
-                <Legend wrapperStyle={{fontSize: "12px"}} />
-                <Line type="monotone" dataKey="cpp" stroke="#219ebc" strokeWidth={2} dot={false} />
+                <Tooltip 
+                  labelFormatter={(value) => `Date: ${value}`}
+                  formatter={(value) => [`${value}¢`, 'CPP']}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="cpp" 
+                  stroke="#219ebc" 
+                  strokeWidth={3} 
+                  dot={{ fill: '#219ebc', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#219ebc', strokeWidth: 2 }}
+                  connectNulls={true}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -184,12 +307,18 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={cppBySourceData.map(s => ({name: s.name, value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0)}))}
+                  data={cppBySourceData.map(s => ({
+                    name: s.name,
+                    value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0),
+                    data: cppBySourceData.map(s => ({
+                      name: s.name,
+                      value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0)
+                    }))
+                  }))}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={90}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -197,27 +326,43 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{fontSize: "12px"}} iconSize={10}/>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend 
+                  wrapperStyle={{fontSize: "11px"}} 
+                  iconSize={8}
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                  iconType="circle"
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Cumulative Points Over Time</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={pointsByDate} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <AreaChart data={pointsByDate} margin={{ top: 8, right: 16, left: 0, bottom: 50 }}>
                 <defs>
                   <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#219ebc" stopOpacity={0.8}/>
                     <stop offset="95%" stopColor="#8ecae6" stopOpacity={0.2}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" angle={-30} textAnchor="end" height={70} interval={0} tick={{fontSize: 10}} />
+                <XAxis 
+                  dataKey="formattedDate"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tick={{fontSize: 10}}
+                  tickFormatter={(value, index) => formatDateTick(pointsByDate[index]?.date || value, index, pointsByDate)}
+                />
                 <YAxis tick={{fontSize: 10}} />
                 <CartesianGrid strokeDasharray="3 3" />
-                <Tooltip />
+                <Tooltip 
+                  labelFormatter={(value) => `Date: ${value}`}
+                  formatter={(value) => [value.toLocaleString() + ' points', 'Cumulative Points']}
+                />
                 <Area type="monotone" dataKey="points" stroke="#219ebc" fillOpacity={1} fill="url(#colorPoints)" />
-                <Legend />
               </AreaChart>
             </ResponsiveContainer>
           </div>

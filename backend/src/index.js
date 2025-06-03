@@ -1,38 +1,112 @@
+// Set production environment for Docker deployments
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+
 import express from 'express';
 import cors from 'cors';
-import { initDb } from './db.js';
+import { initDb, closeDb, getDb } from './db.js';
+import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
+import importExportRouter from './routes/import-export.js';
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 5001);
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Cost Per Point API!' });
-});
+// Configure CORS based on environment
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Development origins
+    const developmentOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:5174'
+    ];
+    
+    // Production/Docker origins - allow any origin for Docker deployments
+    // In production Docker, the frontend will be served from the same host
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (isProduction) {
+      // In Docker deployment, allow all origins since we can't predict the domain
+      callback(null, true);
+    } else {
+      // In development, restrict to specific origins
+      if (developmentOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
 
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Increase JSON payload limit for file uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Routes
 app.use('/api/redemptions', redemptionsRouter);
+app.use('/api/import-export', importExportRouter);
 
-initDb();
-
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Health check with detailed migration status
+app.get('/health', (req, res) => {
+  const migrationStatus = getMigrationStatus();
+  res.json({ 
+    status: 'OK', 
+    database: 'PostgreSQL',
+    migration: migrationStatus
+  });
 });
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Initialize PostgreSQL database
+    await initDb();
+    console.log('✅ PostgreSQL database initialized');
+    
+    // Run automatic migration if needed
+    const pool = await getDb();
+    await autoMigrate(pool);
+    console.log('✅ Migration check completed');
+    
+    const migrationStatus = getMigrationStatus();
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 Database: PostgreSQL`);
+      console.log(`🔄 Migration: ${migrationStatus.status}`);
+      if (migrationStatus.migratedCount) {
+        console.log(`📈 Migrated: ${migrationStatus.migratedCount} redemptions`);
+      }
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
+  await closeDb();
+  process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
-}); 
+  await closeDb();
+  process.exit(0);
+});
+
+startServer(); 
