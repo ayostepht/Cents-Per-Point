@@ -12,15 +12,28 @@ const isDockerLocalhost = () => {
   return window.location.hostname === 'localhost' && (window.location.port === '3000' || window.location.port === '5173');
 };
 
+const isCustomDockerSetup = () => {
+  // Custom Docker setup with non-standard ports (like 3300:3000)
+  return window.location.port === '3300' || 
+         (window.location.hostname !== 'localhost' && window.location.port === '3000');
+};
+
 const getApiUrl = () => {
   if (isDevelopment()) {
     // Local development with Vite
     return 'http://localhost:5001';
   } else if (isDockerLocalhost()) {
-    // Docker running locally
+    // Docker running locally with standard ports
     return 'http://localhost:5000';
+  } else if (isCustomDockerSetup()) {
+    // Custom Docker setup - assume backend is on port 5005 if frontend is on 3300
+    if (window.location.port === '3300') {
+      return `http://${window.location.hostname}:5005`;
+    }
+    // For other custom setups, try port 5000 first
+    return `http://${window.location.hostname}:5000`;
   } else {
-    // Production deployment or other Docker scenarios
+    // Default production deployment
     return `http://${window.location.hostname}:5000`;
   }
 };
@@ -28,5 +41,6 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 
 console.log('API URL:', API_URL); // Debug log for troubleshooting
+console.log('Window location:', window.location.hostname + ':' + window.location.port);
 
 export default API_URL; 
