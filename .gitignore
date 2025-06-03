@@ -19,6 +19,8 @@ lerna-debug.log*
 
 # Environment files
 .env
+.env.*
+!.env.example
 *.local
 
 # Editor settings
@@ -31,6 +33,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+.cursor/
 
 # Local development Docker files
 docker-compose.local.yml
@@ -42,6 +45,25 @@ build-local.sh
 
 # Local scripts
 dev.sh
+
+# Build artifacts and caches
+*.pid
+*.seed
+*.pid.lock
+.cache/
+build/
+.next/
+out/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+tmp/
 
 # GitHub Actions workflows
 # (Workflow YAMLs are tracked; do not store secrets in this directory)

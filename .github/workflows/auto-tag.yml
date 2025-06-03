@@ -1,0 +1,73 @@
+name: Auto Tag on Dependabot Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - beta
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'dependencies')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions@github.com'
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create new tag
+        id: create_tag
+        run: |
+          LATEST_TAG=${{ steps.get_latest_tag.outputs.latest_tag }}
+          # Extract version numbers
+          MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | tr -d 'v')
+          MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+          PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+          
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_TAG="v$MAJOR.$MINOR.$NEW_PATCH"
+          
+          # Create and push the new tag
+          git tag -a $NEW_TAG -m "Security update: $NEW_TAG"
+          git push origin $NEW_TAG
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+      - name: Update RELEASE_NOTES.md
+        run: |
+          NEW_TAG=${{ steps.create_tag.outputs.new_tag }}
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_TITLE=${{ github.event.pull_request.title }}
+          
+          # Add new section to RELEASE_NOTES.md
+          cat << EOF >> docs/RELEASE_NOTES.md
+          
+          ## $NEW_TAG
+          
+          ### Security Updates
+          - $PR_TITLE (#$PR_NUMBER)
+          
+          EOF
+          
+          # Commit and push changes
+          git add docs/RELEASE_NOTES.md
+          git commit -m "docs: update release notes for $NEW_TAG"
+          git push origin main
+
+      - name: Trigger Docker Build
+        run: |
+          # This step is just a placeholder - the Docker build should be triggered
+          # automatically by the tag push. If it's not, we can add explicit trigger here.
+          echo "Docker build should be triggered by the new tag: ${{ steps.create_tag.outputs.new_tag }}" 
