@@ -38,6 +38,7 @@ jobs:
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
 
       - name: Build and push backend image (beta)
@@ -46,6 +47,7 @@ jobs:
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:beta
 
       - name: Build and push backend image (version tag)
@@ -54,6 +56,7 @@ jobs:
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:${{ steps.extract_version.outputs.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
@@ -64,6 +67,7 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
 
       - name: Build and push frontend image (beta)
@@ -72,6 +76,7 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta
 
       - name: Build and push frontend image (version tag)
@@ -80,6 +85,7 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:${{ steps.extract_version.outputs.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest 
