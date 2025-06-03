@@ -22,25 +22,85 @@
 
 ## 🚀 Quick Start
 
-```bash
-# Download and start
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
-docker-compose up -d
+1. Create a new directory for the project and create a `docker-compose.yml` file with the following content:
 
-# Open your browser
+```yaml
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cpp_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    image: stephtanner1/cpp-backend
+    environment:
+      DB_HOST: postgres
+      DB_NAME: cpp_database
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
+      DB_PORT: 5432
+    ports:
+      - "5000:5000" 
+    # Optional: Mount SQLite data if migrating from a previous sqlite version
+    # volumes:
+    #  - backend_data:/app/data 
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: stephtanner1/cpp-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  #optional, uncomment line below if migrating from a previous sqlite version
+  # backend_data:
+```
+
+2. Start the application:
+```bash
+docker-compose up -d
+```
+
+3. Open your browser:
+```bash
 open http://localhost:3000
 ```
 
 ## 📦 Installation & Migration
 
 ### New Installation
+1. Create a new directory for the project
+2. Create a `docker-compose.yml` file with the content shown above
+3. (Optional) Create a `.env` file to set a custom database password:
 ```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+DB_PASSWORD=your-secure-password
+```
+4. Start the application:
+```bash
 docker-compose up -d
 ```
 
 ### Migrating from SQLite
-If you have existing SQLite data, uncomment the volume lines in `docker-compose.yml`:
+If you have existing SQLite data, modify the `docker-compose.yml` file to uncomment the volume lines:
 
 ```yaml
 # In backend service:
