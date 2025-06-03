@@ -123,7 +123,7 @@ export default function Redemptions() {
     const { name, value, type, checked } = e.target;
     setEditForm(f => {
       if (name === 'is_travel_credit') {
-        return { ...f, is_travel_credit: checked, points: checked && (!f.points || f.points === '') ? 0 : f.points };
+        return { ...f, is_travel_credit: checked };
       }
       return { ...f, [name]: type === 'checkbox' ? checked : value };
     });
@@ -133,7 +133,7 @@ export default function Redemptions() {
     await axios.put(`${API_URL}/api/redemptions/${id}`, {
       date: editForm.date,
       source: editForm.source,
-      points: editForm.is_travel_credit ? 0 : Number(editForm.points),
+      points: Number(editForm.points),
       value: Number(editForm.value),
       taxes: Number(editForm.taxes),
       notes: editForm.notes,
@@ -151,7 +151,7 @@ export default function Redemptions() {
     const { name, value, type, checked } = e.target;
     setAddForm(f => {
       if (name === 'is_travel_credit') {
-        return { ...f, is_travel_credit: checked, points: checked && (!f.points || f.points === '') ? 0 : f.points };
+        return { ...f, is_travel_credit: checked };
       }
       return { ...f, [name]: type === 'checkbox' ? checked : value };
     });
@@ -179,7 +179,7 @@ export default function Redemptions() {
       const response = await axios.post(`${API_URL}/api/redemptions`, {
         date: addForm.date,
         source: addForm.source,
-        points: addForm.is_travel_credit ? 0 : Number(addForm.points),
+        points: Number(addForm.points),
         value: Number(addForm.value),
         taxes: Number(addForm.taxes),
         notes: addForm.notes,
