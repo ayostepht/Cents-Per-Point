@@ -11,9 +11,34 @@ import importExportRouter from './routes/import-export.js';
 const app = express();
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 5001);
 
-// Configure CORS
+// Configure CORS based on environment
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow both frontend ports
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Development origins
+    const developmentOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:5174'
+    ];
+    
+    // Production/Docker origins - allow any origin for Docker deployments
+    // In production Docker, the frontend will be served from the same host
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (isProduction) {
+      // In Docker deployment, allow all origins since we can't predict the domain
+      callback(null, true);
+    } else {
+      // In development, restrict to specific origins
+      if (developmentOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
