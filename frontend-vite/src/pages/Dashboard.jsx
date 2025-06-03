@@ -363,7 +363,6 @@ export default function Dashboard() {
                   formatter={(value) => [value.toLocaleString() + ' points', 'Cumulative Points']}
                 />
                 <Area type="monotone" dataKey="points" stroke="#219ebc" fillOpacity={1} fill="url(#colorPoints)" />
-                <Legend />
               </AreaChart>
             </ResponsiveContainer>
           </div>
