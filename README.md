@@ -51,7 +51,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
       DB_PORT: 5432
     ports:
-      - "5000:5000" 
+      - "5000:5000" # Change if port 5000 is already in use
     # Optional: Mount SQLite data if migrating from a previous sqlite version
     # volumes:
     #  - backend_data:/app/data 
@@ -62,6 +62,10 @@ services:
 
   frontend:
     image: stephtanner1/cpp-frontend
+    # If using a custom backend port, uncomment and update:
+    # environment:
+    #   - VITE_BACKEND_URL=http://[serverip/hostname]:[port]
+    # Example: VITE_BACKEND_URL=http://192.168.0.111:5001
     ports:
       - "3000:3000"
     depends_on:
@@ -70,8 +74,7 @@ services:
 
 volumes:
   postgres_data:
-  #optional, uncomment line below if migrating from a previous sqlite version
-  # backend_data:
+  # backend_data: # Uncomment if migrating from SQLite
 ```
 
 2. Start the application:
@@ -79,56 +82,72 @@ volumes:
 docker-compose up -d
 ```
 
-3. Open your browser:
+3. Access the application:
 ```bash
+# Local installation
 open http://localhost:3000
+
+# Remote installation
+open http://[server-ip]:3000
 ```
 
-## 📦 Installation & Migration
+## 📦 Installation Options
 
-### New Installation
-1. Create a new directory for the project
-2. Create a `docker-compose.yml` file with the content shown above
-3. (Optional) Create a `.env` file to set a custom database password:
-```bash
-DB_PASSWORD=your-secure-password
-```
-4. Start the application:
-```bash
-docker-compose up -d
-```
+### Basic Installation
+1. Create a directory and add the `docker-compose.yml` file shown above
+2. (Optional) Create a `.env` file to set a custom database password:
+   ```bash
+   DB_PASSWORD=your-secure-password
+   ```
+3. Start the application: `docker-compose up -d`
 
 ### Migrating from SQLite
-If you have existing SQLite data, modify the `docker-compose.yml` file to uncomment the volume lines:
+If you have existing SQLite data:
+1. Uncomment the volume lines in `docker-compose.yml`:
+   ```yaml
+   # In backend service:
+   volumes:
+     - backend_data:/app/data
+   
+   # In volumes section:
+   volumes:
+     postgres_data:
+     backend_data:
+   ```
+2. Start the application: `docker-compose up -d`
+3. The migration happens automatically on first run
 
-```yaml
-# In backend service:
-volumes:
-  - backend_data:/app/data  # Your volume name
+## ⚙️ Port Configuration
 
-# In volumes section:
-volumes:
-  postgres_data:
-  backend_data:  # Your volume name
-```
+By default, the application uses these ports:
 
-Then start: `docker-compose up -d`
+| Service  | Port | Description    |
+|----------|------|----------------|
+| Frontend | 3000 | Web interface  |
+| Backend  | 5000 | REST API       |
+| Database | 5432 | PostgreSQL     |
 
-The app automatically detects and migrates SQLite data to PostgreSQL.
+### Customizing Backend Port
 
-## ⚙️ Configuration
+If port 5000 is already in use:
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 3000 | Web interface |
-| Backend | 5000 | REST API |
-| Health Check | http://localhost:5000/health | Status & migration info |
+1. Change the port mapping in `docker-compose.yml`:
+   ```yaml
+   backend:
+     ports:
+       - "5001:5000"  # Host port 5001 maps to container port 5000
+   ```
 
-### Environment Variables
-```bash
-# Optional: Set custom password in .env file
-DB_PASSWORD=your-secure-password
-```
+2. Update the frontend configuration:
+   ```yaml
+   frontend:
+     environment:
+       - VITE_BACKEND_URL=http://[serverip/hostname]:[port]
+   ```
+   
+   Examples:
+   - Local setup: `VITE_BACKEND_URL=http://localhost:5001`
+   - Remote server: `VITE_BACKEND_URL=http://192.168.0.111:5001`
 
 ## 📚 API Reference
 

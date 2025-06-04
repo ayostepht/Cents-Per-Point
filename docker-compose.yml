@@ -25,7 +25,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
       DB_PORT: 5432
     ports:
-      - "5000:5000" 
+      - "5000:5000" # Change if port 5000 is already in use
     # Optional: Mount SQLite data if migrating from a previous sqlite version
     # volumes:
     #  - backend_data:/app/data 
@@ -36,6 +36,10 @@ services:
 
   frontend:
     image: stephtanner1/cpp-frontend
+    # If using a custom backend port, uncomment and update:
+    # environment:
+    #   - VITE_BACKEND_URL=http://[serverip/hostname]:[port]
+    # Example: VITE_BACKEND_URL=http://192.168.0.111:5001
     ports:
       - "3000:3000"
     depends_on:
@@ -44,4 +48,4 @@ services:
 
 volumes:
   postgres_data:
-  # backend_data: -- optional, uncomment if migrating from a previous sqlite version
+  # backend_data: # Uncomment if migrating from SQLite

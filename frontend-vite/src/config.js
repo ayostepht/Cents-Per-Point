@@ -13,12 +13,17 @@ const isDockerLocalhost = () => {
 };
 
 const isCustomDockerSetup = () => {
-  // Custom Docker setup with non-standard ports (like 3300:3000)
-  return window.location.port === '3300' || 
-         (window.location.hostname !== 'localhost' && window.location.port === '3000');
+  // Any custom port setup
+  return window.location.hostname === 'localhost' && 
+         !['5174', '3000', '5173'].includes(window.location.port);
 };
 
 const getApiUrl = () => {
+  // First check for environment variable (passed from Docker compose)
+  if (import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  
   if (isDevelopment()) {
     // Local development with Vite
     return 'http://localhost:5001';
@@ -26,11 +31,19 @@ const getApiUrl = () => {
     // Docker running locally with standard ports
     return 'http://localhost:5000';
   } else if (isCustomDockerSetup()) {
-    // Custom Docker setup - assume backend is on port 5005 if frontend is on 3300
-    if (window.location.port === '3300') {
-      return `http://${window.location.hostname}:5005`;
+    // Try to detect the backend port from the custom frontend port
+    // Convention: If frontend runs on port 3xyz, backend is on 5xyz
+    const portMatch = window.location.port.match(/^3(\d{3})$/);
+    if (portMatch) {
+      return `http://${window.location.hostname}:5${portMatch[1]}`;
     }
-    // For other custom setups, try port 5000 first
+    // For other custom setups, check URL params for backend port
+    const urlParams = new URLSearchParams(window.location.search);
+    const backendPort = urlParams.get('backend_port');
+    if (backendPort) {
+      return `http://${window.location.hostname}:${backendPort}`;
+    }
+    // Fallback to default backend port
     return `http://${window.location.hostname}:5000`;
   } else {
     // Default production deployment
