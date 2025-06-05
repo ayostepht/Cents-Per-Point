@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN}}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -54,7 +54,7 @@ jobs:
         run: |
           NEW_TAG=${{ steps.create_tag.outputs.new_tag }}
           PR_NUMBER=${{ github.event.pull_request.number }}
-          PR_TITLE=${{ github.event.pull_request.title }}
+          PR_TITLE="${{ github.event.pull_request.title }}"
           
           # Add new section to RELEASE_NOTES.md
           cat << EOF >> docs/RELEASE_NOTES.md
@@ -62,7 +62,7 @@ jobs:
           ## $NEW_TAG
           
           ### Security Updates
-          - $PR_TITLE (#$PR_NUMBER)
+          - "$PR_TITLE" (#$PR_NUMBER)
           
           EOF
           
