@@ -8,7 +8,9 @@ import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migratio
 import redemptionsRouter from './routes/redemptions.js';
 import importExportRouter from './routes/import-export.js';
 
+// Export the Express app for testing purposes
 const app = express();
+export { app };
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 5001);
 
 // Configure CORS based on environment
@@ -109,4 +111,8 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-startServer(); 
+export { startServer };
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
