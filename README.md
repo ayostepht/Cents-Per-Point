@@ -151,6 +151,8 @@ If port 5000 is already in use:
 
 ## 📚 API Reference
 
+Interactive docs are available at [`/api/docs`](http://localhost:5000/api/docs).
+
 ### Redemptions
 - `GET /api/redemptions` - List all redemptions
 - `POST /api/redemptions` - Create new redemption

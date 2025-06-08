@@ -6,6 +6,13 @@ import { Readable } from 'stream';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: ImportExport
+ *     description: CSV import and export utilities
+ */
+
 // Configure multer for file uploads (memory storage for CSV)
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -21,7 +28,21 @@ const upload = multer({
   }
 });
 
-// Export all redemptions as CSV
+/**
+ * @openapi
+ * /api/import-export/export:
+ *   get:
+ *     summary: Export all redemptions as CSV
+ *     tags: [ImportExport]
+ *     responses:
+ *       200:
+ *         description: CSV file containing all redemptions
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
 router.get('/export', async (req, res) => {
   const pool = await getDb();
   try {
@@ -66,7 +87,21 @@ router.get('/export', async (req, res) => {
   }
 });
 
-// Download CSV template
+/**
+ * @openapi
+ * /api/import-export/template:
+ *   get:
+ *     summary: Download CSV template
+ *     tags: [ImportExport]
+ *     responses:
+ *       200:
+ *         description: CSV template file
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
 router.get('/template', (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="redemptions-template.csv"');
@@ -96,7 +131,30 @@ router.get('/template', (req, res) => {
   res.end();
 });
 
-// Analyze CSV headers for column mapping
+/**
+ * @openapi
+ * /api/import-export/analyze:
+ *   post:
+ *     summary: Analyze CSV headers for column mapping
+ *     tags: [ImportExport]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               csvFile:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Analysis result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
 router.post('/analyze', upload.single('csvFile'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No CSV file provided' });
@@ -187,7 +245,32 @@ router.post('/analyze', upload.single('csvFile'), async (req, res) => {
   }
 });
 
-// Import redemptions from CSV with column mapping
+/**
+ * @openapi
+ * /api/import-export/import:
+ *   post:
+ *     summary: Import redemptions from CSV
+ *     tags: [ImportExport]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               csvFile:
+ *                 type: string
+ *                 format: binary
+ *               columnMappings:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Import results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
 router.post('/import', upload.any(), async (req, res) => {
   // Find the CSV file in the uploaded files
   const file = req.files?.find(f => f.fieldname === 'csvFile' || f.fieldname === 'file');

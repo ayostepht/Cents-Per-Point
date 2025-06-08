@@ -1,9 +1,50 @@
 import express from 'express';
 import { getDb } from '../db.js';
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Redemption:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         date:
+ *           type: string
+ *           format: date
+ *         source:
+ *           type: string
+ *         points:
+ *           type: integer
+ *         value:
+ *           type: number
+ *         taxes:
+ *           type: number
+ *         notes:
+ *           type: string
+ *         is_travel_credit:
+ *           type: boolean
+ */
+
 const router = express.Router();
 
-// Get all redemptions
+/**
+ * @openapi
+ * /api/redemptions:
+ *   get:
+ *     summary: List all redemptions
+ *     tags: [Redemptions]
+ *     responses:
+ *       200:
+ *         description: A JSON array of redemptions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Redemption'
+ */
 router.get('/', async (req, res) => {
   const pool = await getDb();
   try {
@@ -14,7 +55,29 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Add a new redemption
+/**
+ * @openapi
+ * /api/redemptions:
+ *   post:
+ *     summary: Create a new redemption
+ *     tags: [Redemptions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Redemption'
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ */
 router.post('/', async (req, res) => {
   const { date, source, points, value, taxes, notes, is_travel_credit } = req.body;
   if (!date || !source || (!points && !is_travel_credit) || !value) {
@@ -33,7 +96,28 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get a single redemption by id
+/**
+ * @openapi
+ * /api/redemptions/{id}:
+ *   get:
+ *     summary: Get a redemption by ID
+ *     tags: [Redemptions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: A redemption object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Redemption'
+ *       404:
+ *         description: Not found
+ */
 router.get('/:id', async (req, res) => {
   const pool = await getDb();
   try {
@@ -47,7 +131,30 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update a redemption by id
+/**
+ * @openapi
+ * /api/redemptions/{id}:
+ *   put:
+ *     summary: Update a redemption
+ *     tags: [Redemptions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Redemption'
+ *     responses:
+ *       200:
+ *         description: Success
+ *       404:
+ *         description: Not found
+ */
 router.put('/:id', async (req, res) => {
   const { date, source, points, value, taxes, notes, is_travel_credit } = req.body;
   const pool = await getDb();
@@ -65,7 +172,24 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a redemption by id
+/**
+ * @openapi
+ * /api/redemptions/{id}:
+ *   delete:
+ *     summary: Delete a redemption
+ *     tags: [Redemptions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Success
+ *       404:
+ *         description: Not found
+ */
 router.delete('/:id', async (req, res) => {
   const pool = await getDb();
   try {

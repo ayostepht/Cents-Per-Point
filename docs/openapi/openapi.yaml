@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: Cents Per Point API
+  version: 1.0.0
+paths:
+  /api/import-export/export:
+    get:
+      summary: Export all redemptions as CSV
+      tags:
+        - ImportExport
+      responses:
+        '200':
+          description: CSV file containing all redemptions
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+  /api/import-export/template:
+    get:
+      summary: Download CSV template
+      tags:
+        - ImportExport
+      responses:
+        '200':
+          description: CSV template file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+  /api/import-export/analyze:
+    post:
+      summary: Analyze CSV headers for column mapping
+      tags:
+        - ImportExport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                csvFile:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/import-export/import:
+    post:
+      summary: Import redemptions from CSV
+      tags:
+        - ImportExport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                csvFile:
+                  type: string
+                  format: binary
+                columnMappings:
+                  type: string
+      responses:
+        '200':
+          description: Import results
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/redemptions:
+    get:
+      summary: List all redemptions
+      tags:
+        - Redemptions
+      responses:
+        '200':
+          description: A JSON array of redemptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Redemption'
+    post:
+      summary: Create a new redemption
+      tags:
+        - Redemptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Redemption'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+  /api/redemptions/{id}:
+    get:
+      summary: Get a redemption by ID
+      tags:
+        - Redemptions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: A redemption object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+        '404':
+          description: Not found
+    put:
+      summary: Update a redemption
+      tags:
+        - Redemptions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Redemption'
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not found
+    delete:
+      summary: Delete a redemption
+      tags:
+        - Redemptions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not found
+components:
+  schemas:
+    Redemption:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        source:
+          type: string
+        points:
+          type: integer
+        value:
+          type: number
+        taxes:
+          type: number
+        notes:
+          type: string
+        is_travel_credit:
+          type: boolean
+tags:
+  - name: ImportExport
+    description: CSV import and export utilities
