@@ -3,6 +3,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { initDb, closeDb, getDb } from './db.js';
 import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
@@ -55,6 +56,15 @@ app.options('*', cors(corsOptions));
 // Increase JSON payload limit for file uploads
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Basic rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use(limiter);
 
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
