@@ -193,7 +193,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 Licensed under MIT License. See [LICENSE](LICENSE) for details.
 
-- 🐛 **Issues & Features**: [GitHub Issues](https://github.com/stephtanner1/Cost%20Per%20Point/issues)
+- 🐛 **Issues & Features**: [GitHub Issues](https://github.com/stephtanner1/Cents-Per-Point/issues)
 - 📖 **Detailed Docs**: [Deployment Guide](DEPLOYMENT.md)
 
 ---
