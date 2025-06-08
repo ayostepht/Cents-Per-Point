@@ -57,14 +57,12 @@ const renderCustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, perc
 };
 
 // Custom tooltip for pie chart with Type, %, Amount
-const CustomPieTooltip = ({ active, payload }) => {
+const CustomPieTooltip = ({ active, payload, total }) => {
   if (active && payload && payload.length) {
     const data = payload[0];
-    const { name, value, payload: pieData } = data;
-    
-    // Calculate total from all pie data
-    const total = pieData.data?.reduce((sum, item) => sum + item.value, 0) || 0;
-    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+    const { name, value } = data;
+
+    const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
     
     return (
       <div style={{ 
@@ -77,7 +75,7 @@ const CustomPieTooltip = ({ active, payload }) => {
       }}>
         <div><strong>Type:</strong> {name}</div>
         <div><strong>Amount:</strong> {value.toLocaleString()} points</div>
-        <div><strong>Percentage:</strong> {percentage}%</div>
+        <div><strong>Percentage:</strong> {pct}%</div>
       </div>
     );
   }
@@ -231,11 +229,29 @@ export default function Dashboard() {
     fill: COLORS[i % COLORS.length]
   })).filter(s => s.avgCpp !== null && !isNaN(s.avgCpp));
 
+  const pointsBySourceData = useMemo(() => {
+    return Object.values(bySource).map(s => ({
+      name: s.source,
+      value: filtered
+        .filter(r => r.source === s.source)
+        .reduce((sum, r) => sum + (Number(r.points) || 0), 0),
+    }));
+  }, [bySource, filtered]);
+
+  const totalPointsBySource = pointsBySourceData.reduce((sum, s) => sum + s.value, 0);
+
   const topRedemptions = [...filtered].sort((a, b) => b.value - a.value).slice(0, 5);
 
   // Best and worst redemptions
-  const bestRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
-  const worstRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
+  // Only consider redemptions with points to avoid divide-by-zero issues
+  const withPoints = filtered.filter(r => r.points > 0);
+
+  const bestRedemption = withPoints.length
+    ? withPoints.reduce((a, b) => ((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)
+    : null;
+  const worstRedemption = withPoints.length
+    ? withPoints.reduce((a, b) => ((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)
+    : null;
 
   const recentRedemptions = filtered.slice(0, 5);
 
@@ -307,14 +323,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={cppBySourceData.map(s => ({
-                    name: s.name,
-                    value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0),
-                    data: cppBySourceData.map(s => ({
-                      name: s.name,
-                      value: filtered.filter(r => r.source === s.name).reduce((sum, r) => sum + r.points, 0)
-                    }))
-                  }))}
+                  data={pointsBySourceData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -322,13 +331,13 @@ export default function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {cppBySourceData.map((entry, index) => (
+                  {pointsBySourceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend 
-                  wrapperStyle={{fontSize: "11px"}} 
+                <Tooltip content={<CustomPieTooltip total={totalPointsBySource} />} />
+                <Legend
+                  wrapperStyle={{fontSize: "11px"}}
                   iconSize={8}
                   layout="vertical"
                   align="right"
