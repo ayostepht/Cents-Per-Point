@@ -17,6 +17,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
         working-directory: backend
+      - name: Install PostgreSQL
+        run: sudo apt-get -y install postgresql postgresql-contrib
+      - name: Start PostgreSQL
+        run: sudo service postgresql start
+      - name: Create test database and user
+        run: |
+          sudo -u postgres psql -c "CREATE USER testuser WITH PASSWORD 'testpassword';"
+          sudo -u postgres psql -c "CREATE DATABASE testdb OWNER testuser;"
+      - name: Set environment variables
+        run: |
+          echo "PGHOST=localhost" >> $GITHUB_ENV
+          echo "PGPORT=5432" >> $GITHUB_ENV
+          echo "PGUSER=testuser" >> $GITHUB_ENV
+          echo "PGPASSWORD=testpassword" >> $GITHUB_ENV
+          echo "PGDATABASE=testdb" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
       - name: Run tests
         run: npm test
         working-directory: backend
