@@ -12,4 +12,4 @@ echo "🐘 Stopping PostgreSQL container..."
 docker-compose stop postgres
 
 echo "✅ All services stopped!"
-echo "💡 Run ./dev.sh to start the development environment again" 
+echo "💡 Run 'docker-compose up -d' to start the development environment again"
