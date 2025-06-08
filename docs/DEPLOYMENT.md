@@ -6,7 +6,7 @@
 
 ```bash
 # Download and start - that's it!
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cents-Per-Point/main/docker-compose.yml
 docker-compose up -d
 ```
 
@@ -16,7 +16,7 @@ If you have existing SQLite data in a Docker volume:
 
 ```bash
 # Download the compose file
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cents-Per-Point/main/docker-compose.yml
 
 # Edit the file to uncomment the volume lines:
 # In the backend service, uncomment:
@@ -114,7 +114,7 @@ your-deployment/
 
 ```bash
 # Download and run - no editing needed
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cents-Per-Point/main/docker-compose.yml
 docker-compose up -d
 ```
 
@@ -122,7 +122,7 @@ docker-compose up -d
 
 ```bash
 # Download compose file
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cents-Per-Point/main/docker-compose.yml
 
 # Edit to uncomment volume lines (replace 'backend_data' with your volume name):
 # Backend service volumes section
@@ -161,7 +161,7 @@ docker-compose up -d
 
 ```bash
 # Download new compose file
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cents-Per-Point/main/docker-compose.yml
 
 # Uncomment volume lines for your SQLite data
 # (edit docker-compose.yml)
