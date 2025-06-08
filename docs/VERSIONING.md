@@ -73,7 +73,7 @@ When a version tag (e.g., `v0.1.0`) is pushed:
 ## Release Notes
 
 Release notes are maintained in GitHub Releases, accessible at:
-https://github.com/[username]/Cost%20Per%20Point/releases
+https://github.com/[username]/Cents-Per-Point/releases
 
 ## Example Release Workflow
 
