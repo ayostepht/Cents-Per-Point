@@ -1,0 +1,44 @@
+name: Backend Compose Tests
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-compose.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Start services
+        run: docker compose -f docker-compose.yml up -d postgres
+      - name: Wait for Postgres
+        run: |
+          for i in {1..15}; do
+            docker exec $(docker compose ps -q postgres) pg_isready -U postgres && break
+            sleep 2
+          done
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Run tests
+        run: npm test -- --coverage
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_NAME: cpp_database
+          DB_USER: postgres
+          DB_PASSWORD: securepassword123
+          DB_PORT: 5432
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          flags: backend
+      - name: Shutdown
+        if: always()
+        run: docker compose -f docker-compose.yml down
