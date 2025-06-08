@@ -7,6 +7,20 @@ import { initDb, closeDb, getDb } from './db.js';
 import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
 import importExportRouter from './routes/import-export.js';
+import swaggerUi from 'swagger-ui-express';
+import yaml from 'js-yaml';
+import fs from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const openapiFile = join(__dirname, '../../docs/openapi/openapi.yaml');
+let openapiSpec = {};
+try {
+  openapiSpec = yaml.load(fs.readFileSync(openapiFile, 'utf8'));
+} catch (err) {
+  console.warn('OpenAPI spec not found. Run npm run generate:openapi');
+}
 
 // Export the Express app for testing purposes
 const app = express();
@@ -59,6 +73,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
 app.use('/api/import-export', importExportRouter);
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+app.get('/api/docs/openapi.yaml', (req, res) => {
+  res.type('yaml').send(fs.readFileSync(openapiFile, 'utf8'));
+});
 
 // Health check with detailed migration status
 app.get('/health', (req, res) => {

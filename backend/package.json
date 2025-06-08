@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "generate:openapi": "node scripts/generate-openapi.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -14,7 +15,10 @@
     "pg": "^8.13.1",
     "dotenv": "^16.4.7",
     "multer": "^2.0.0",
-    "csv-parser": "^3.0.0"
+    "csv-parser": "^3.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^4.6.3",
+    "js-yaml": "^4.1.0"
   },
   "optionalDependencies": {
     "sqlite": "^5.1.1",
