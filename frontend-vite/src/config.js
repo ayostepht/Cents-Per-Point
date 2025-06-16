@@ -19,23 +19,11 @@ const isCustomDockerSetup = () => {
 };
 
 const getApiUrl = () => {
-  if (isDevelopment()) {
-    // Local development with Vite
-    return 'http://localhost:5001';
-  } else if (isDockerLocalhost()) {
-    // Docker running locally with standard ports
+  if (process.env.NODE_ENV === 'production') {
     return 'http://localhost:5000';
-  } else if (isCustomDockerSetup()) {
-    // Custom Docker setup - assume backend is on port 5005 if frontend is on 3300
-    if (window.location.port === '3300') {
-      return `http://${window.location.hostname}:5005`;
-    }
-    // For other custom setups, try port 5000 first
-    return `http://${window.location.hostname}:5000`;
-  } else {
-    // Default production deployment
-    return `http://${window.location.hostname}:5000`;
   }
+  // For local development, use 5001
+  return `http://${window.location.hostname}:5001`;
 };
 
 const API_URL = getApiUrl();
@@ -43,4 +31,5 @@ const API_URL = getApiUrl();
 console.log('API URL:', API_URL); // Debug log for troubleshooting
 console.log('Window location:', window.location.hostname + ':' + window.location.port);
 
+export const API_BASE_URL = API_URL;
 export default API_URL; 

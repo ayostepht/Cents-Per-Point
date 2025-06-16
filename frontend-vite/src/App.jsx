@@ -4,14 +4,17 @@ import Dashboard from './pages/Dashboard';
 import Redemptions from './pages/Redemptions';
 import ShouldIBookIt from './pages/ShouldIBookIt';
 import ImportExport from './pages/ImportExport';
+import Trips from './pages/Trips';
+import TripDetails from './pages/TripDetails';
 import './index.css';
-import { Home, List, Calculator, Download } from 'lucide-react';
+import { Home, List, Calculator, Download, Map } from 'lucide-react';
 
 function NavBar() {
   const location = useLocation();
   const navLinks = [
     { to: '/', label: 'Dashboard', icon: <Home size={20} /> },
     { to: '/redemptions', label: 'Redemptions', icon: <List size={20} /> },
+    { to: '/trips', label: 'Trips', icon: <Map size={20} /> },
     { to: '/should-i-book-it', label: 'Calculator', icon: <Calculator size={20} /> },
     { to: '/import-export', label: 'Import/Export', icon: <Download size={20} /> },
   ];
@@ -52,6 +55,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/redemptions" element={<Redemptions />} />
+          <Route path="/trips" element={<Trips />} />
+          <Route path="/trips/:id" element={<TripDetails />} />
           <Route path="/should-i-book-it" element={<ShouldIBookIt />} />
           <Route path="/import-export" element={<ImportExport />} />
         </Routes>

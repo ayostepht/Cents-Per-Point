@@ -24,6 +24,24 @@ export async function getDb() {
 export async function initDb() {
   const client = await pool.connect();
   try {
+    // Create trips table
+    await client.query('BEGIN');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trips (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        image TEXT,
+        start_date DATE,
+        end_date DATE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await client.query('COMMIT');
+
+    // Create redemptions table
+    await client.query('BEGIN');
     await client.query(`
       CREATE TABLE IF NOT EXISTS redemptions (
         id SERIAL PRIMARY KEY,
@@ -34,16 +52,25 @@ export async function initDb() {
         taxes DECIMAL(10,2) DEFAULT 0,
         notes TEXT,
         is_travel_credit BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        trip_id INTEGER REFERENCES trips(id),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await client.query('COMMIT');
     
-    // Create indexes for better performance
+    // Create indexes in a separate transaction
+    await client.query('BEGIN');
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_redemptions_date ON redemptions(date);
       CREATE INDEX IF NOT EXISTS idx_redemptions_source ON redemptions(source);
+      CREATE INDEX IF NOT EXISTS idx_redemptions_trip_id ON redemptions(trip_id);
     `);
+    await client.query('COMMIT');
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
   } finally {
     client.release();
   }

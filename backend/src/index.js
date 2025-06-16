@@ -7,9 +7,10 @@ import { initDb, closeDb, getDb } from './db.js';
 import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
 import importExportRouter from './routes/import-export.js';
+import tripsRouter from './routes/trips.js';
 
 const app = express();
-const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 5001);
+const PORT = process.env.PORT || 5001;
 
 // Configure CORS based on environment
 const corsOptions = {
@@ -39,7 +40,7 @@ const corsOptions = {
       }
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   maxAge: 86400 // 24 hours
@@ -57,6 +58,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
 app.use('/api/import-export', importExportRouter);
+app.use('/api/trips', tripsRouter);
 
 // Health check with detailed migration status
 app.get('/health', (req, res) => {

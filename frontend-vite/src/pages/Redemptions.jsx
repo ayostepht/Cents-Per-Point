@@ -18,6 +18,7 @@ const columns = [
   { key: 'value', label: 'Total Cash Value ($)' },
   { key: 'cpp', label: 'CPP' },
   { key: 'is_travel_credit', label: 'Free Night Award/Credit' },
+  { key: 'trip', label: 'Trip' },
   { key: 'notes', label: 'Notes' },
   { key: 'actions', label: 'Actions' }
 ];
@@ -52,11 +53,14 @@ export default function Redemptions() {
   const [deleting, setDeleting] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
-  const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', search: '' });
+  const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', search: '', trip: [] });
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
+  const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
   const [cppRange, setCppRange] = useState([0, 10]);
+  const [trips, setTrips] = useState([]);
+  const [addingTripInline, setAddingTripInline] = useState(false);
+  const [newTrip, setNewTrip] = useState({ name: '', description: '' });
   const CPP_MIN = 0;
   const CPP_MAX = 10;
 
@@ -115,7 +119,8 @@ export default function Redemptions() {
       taxes: r.taxes,
       value: r.value,
       notes: r.notes,
-      is_travel_credit: !!r.is_travel_credit
+      is_travel_credit: !!r.is_travel_credit,
+      trip_id: r.trip_id
     });
   };
 
@@ -137,7 +142,8 @@ export default function Redemptions() {
       value: Number(editForm.value),
       taxes: Number(editForm.taxes),
       notes: editForm.notes,
-      is_travel_credit: editForm.is_travel_credit
+      is_travel_credit: editForm.is_travel_credit,
+      trip_id: editForm.trip_id
     });
     setEditingId(null);
     fetchRedemptions();
@@ -183,10 +189,11 @@ export default function Redemptions() {
         value: Number(addForm.value),
         taxes: Number(addForm.taxes),
         notes: addForm.notes,
-        is_travel_credit: addForm.is_travel_credit
+        is_travel_credit: addForm.is_travel_credit,
+        trip_id: addForm.trip_id
       });
       
-      setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
+      setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
       setAdding(false);
       fetchRedemptions();
     } catch (error) {
@@ -196,7 +203,7 @@ export default function Redemptions() {
   };
 
   const handleAddCancel = () => {
-    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
+    setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
     setAdding(false);
   };
 
@@ -204,7 +211,6 @@ export default function Redemptions() {
   const tableData = redemptions.map(r => {
     let cpp = '';
     if (r.is_travel_credit) {
-      // For free night awards, we'll show the total value instead of CPP
       cpp = 'N/A';
     } else if (r.points > 0) {
       cpp = ((r.value - (r.taxes || 0)) / r.points * 100).toFixed(1);
@@ -215,13 +221,12 @@ export default function Redemptions() {
   // Unique sources for dropdown
   const uniqueSources = Array.from(new Set(tableData.map(r => r.source))).filter(Boolean);
 
-  // Filtering - exclude free night awards from CPP range filtering
+  // Filtering
   const filteredData = tableData.filter(r => {
     if (filters.source.length > 0 && !filters.source.includes(r.source)) return false;
     if (filters.dateFrom && r.date < filters.dateFrom) return false;
     if (filters.dateTo && r.date > filters.dateTo) return false;
-    // Only apply CPP filter to non-free-night-award redemptions
-    if (!r.is_travel_credit && r.cpp && (!isNaN(Number(r.cpp))) && (Number(r.cpp) < cppRange[0] || Number(r.cpp) > cppRange[1])) return false;
+    if (filters.trip.length > 0 && !filters.trip.includes(r.trip_id)) return false;
     return true;
   });
 
@@ -251,6 +256,43 @@ export default function Redemptions() {
   useEffect(() => {
     setPage(1); // Reset to first page on filter change
   }, [filters, redemptions]);
+
+  // Fetch trips
+  const fetchTrips = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/trips`);
+      setTrips(response.data);
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const handleTripDropdownChange = (e) => {
+    if (e.target.value === '__add_new__') {
+      setAddingTripInline(true);
+      setAddForm(prev => ({ ...prev, trip_id: null }));
+    } else {
+      setAddingTripInline(false);
+      setAddForm(prev => ({ ...prev, trip_id: e.target.value ? Number(e.target.value) : null }));
+    }
+  };
+
+  const handleAddTripInline = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${API_URL}/api/trips`, newTrip);
+      await fetchTrips();
+      setAddForm(prev => ({ ...prev, trip_id: response.data.id }));
+      setAddingTripInline(false);
+      setNewTrip({ name: '', description: '' });
+    } catch (error) {
+      console.error('Error adding trip:', error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -290,28 +332,21 @@ export default function Redemptions() {
                 className="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-w-[120px]"
               />
             </div>
-            <div className="flex flex-col min-w-[200px]">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">CPP Range (¢)</label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 w-6 text-right">{cppRange[0]}</span>
-                <Slider
-                  range
-                  min={CPP_MIN}
-                  max={CPP_MAX}
-                  value={cppRange}
-                  onChange={setCppRange}
-                  allowCross={false}
-                  trackStyle={[{ backgroundColor: '#2563eb' }]}
-                  handleStyle={[{ borderColor: '#2563eb' }, { borderColor: '#2563eb' }]}
-                  railStyle={{ backgroundColor: '#e5e7eb' }}
-                />
-                <span className="text-xs text-gray-500 w-6 text-left">{cppRange[1]}</span>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Trip</label>
+              <MultiSelect
+                options={trips.map(trip => ({ label: trip.name, value: trip.id }))}
+                value={filters.trip.map(id => ({ label: trips.find(t => t.id === id)?.name, value: id })).filter(Boolean)}
+                onChange={selected => setFilters(f => ({ ...f, trip: selected.map(opt => opt.value) }))}
+                labelledBy="Select Trip"
+                className="min-w-[180px]"
+                hasSelectAll={false}
+                overrideStrings={{ selectSomeItems: 'Select Trip(s)', allItemsAreSelected: 'All Trips', search: 'Search...' }}
+              />
             </div>
             <button
               onClick={() => {
-                setFilters(f => ({ ...f, source: [], dateFrom: '', dateTo: '' }));
-                setCppRange([CPP_MIN, CPP_MAX]);
+                setFilters(f => ({ ...f, source: [], dateFrom: '', dateTo: '', trip: [] }));
               }}
               className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold mt-5"
               type="button"
@@ -346,6 +381,7 @@ export default function Redemptions() {
                     { key: 'value', label: 'Cash Value' },
                     { key: 'cpp', label: 'CPP (¢)' },
                     { key: 'is_travel_credit', label: 'Free Night Award/Credit' },
+                    { key: 'trip', label: 'Trip' },
                     { key: 'notes', label: 'Notes' },
                     { key: 'actions', label: 'Actions' },
                   ].map(col => (
@@ -395,8 +431,11 @@ export default function Redemptions() {
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
                       />
                     </td>
-                    <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
-                    <td className="flex gap-2 items-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {trips.find(t => t.id === r.trip_id)?.name || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={r.notes}>{r.notes || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex gap-2 items-center">
                       <button onClick={() => handleEditSave(r.id)} className="text-green-600" title="Save"><Save size={18} /></button>
                       <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
                     </td>
@@ -412,6 +451,9 @@ export default function Redemptions() {
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       {r.is_travel_credit ? <CheckCircle size={20} className="inline text-blue-600 font-bold" /> : <span className="text-gray-400 font-bold">-</span>}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {trips.find(t => t.id === r.trip_id)?.name || '-'}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={r.notes}>{r.notes || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex gap-2 items-center">
                       <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 transition duration-150" title="Edit"><Edit2 size={18} /></button>
@@ -424,17 +466,17 @@ export default function Redemptions() {
           </div>
         </div>
       </div>
-      <Modal open={adding} onClose={handleAddCancel}>
-        <h3 className="text-2xl font-bold mb-6 mt-0 text-center">Add New Redemption</h3>
-        <form onSubmit={e => { e.preventDefault(); handleAddSave(); }} className="space-y-4">
+      <Modal open={adding || editingId !== null} onClose={editingId !== null ? handleEditCancel : handleAddCancel}>
+        <h2 className="text-2xl font-bold mb-4">{editingId !== null ? 'Edit Redemption' : 'Add Redemption'}</h2>
+        <form onSubmit={e => { e.preventDefault(); editingId !== null ? handleEditSave(editingId) : handleAddSave(); }} className="space-y-4">
           <div>
             <label className="block font-semibold mb-1 text-gray-700">Date<RequiredAsterisk /><br />
-              <input type="date" name="date" value={addForm.date} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <input type="date" name="date" value={editingId !== null ? editForm.date : addForm.date} onChange={editingId !== null ? handleEditChange : handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
           <div>
             <label className="block font-semibold mb-1 text-gray-700">Source<RequiredAsterisk /><br />
-              <select name="source" value={addForm.source} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+              <select name="source" value={editingId !== null ? editForm.source : addForm.source} onChange={editingId !== null ? handleEditChange : handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                 <option value="">Select Source</option>
                 {sourceOptions.map(group => (
                   <optgroup key={group.label} label={group.label}>
@@ -447,18 +489,18 @@ export default function Redemptions() {
             </label>
           </div>
           <div>
-            <label className="block font-semibold mb-1 text-gray-700">Total Points{!addForm.is_travel_credit && <RequiredAsterisk />}<br />
-              <input type="number" name="points" value={addForm.points} onChange={handleAddChange} min={addForm.is_travel_credit ? 0 : 1} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            <label className="block font-semibold mb-1 text-gray-700">Total Points{!editingId !== null && !addForm.is_travel_credit && <RequiredAsterisk />}<br />
+              <input type="number" name="points" value={editingId !== null ? editForm.points : addForm.points} onChange={editingId !== null ? handleEditChange : handleAddChange} min={editingId !== null ? (editForm.is_travel_credit ? 0 : 1) : (addForm.is_travel_credit ? 0 : 1)} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
           <div>
             <label className="block font-semibold mb-1 text-gray-700">Taxes/Fees (USD)<br />
-              <input type="number" name="taxes" value={addForm.taxes} onChange={handleAddChange} min="0" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <input type="number" name="taxes" value={editingId !== null ? editForm.taxes : addForm.taxes} onChange={editingId !== null ? handleEditChange : handleAddChange} min="0" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
           <div>
             <label className="block font-semibold mb-1 text-gray-700">Cash Value (USD)<RequiredAsterisk /><br />
-              <input type="number" name="value" value={addForm.value} onChange={handleAddChange} min="0.01" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <input type="number" name="value" value={editingId !== null ? editForm.value : addForm.value} onChange={editingId !== null ? handleEditChange : handleAddChange} min="0.01" step="0.01" className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
           <div className="flex items-center gap-2">
@@ -466,20 +508,72 @@ export default function Redemptions() {
               type="checkbox" 
               id="is_travel_credit"
               name="is_travel_credit" 
-              checked={!!addForm.is_travel_credit} 
-              onChange={handleAddChange} 
+              checked={editingId !== null ? !!editForm.is_travel_credit : !!addForm.is_travel_credit} 
+              onChange={editingId !== null ? handleEditChange : handleAddChange} 
               className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
             />
             <label htmlFor="is_travel_credit" className="text-gray-700 font-medium">Free Night Award/Credit</label>
           </div>
           <div>
             <label className="block font-semibold mb-1 text-gray-700">Notes<br />
-              <input type="text" name="notes" value={addForm.notes} onChange={handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <input type="text" name="notes" value={editingId !== null ? editForm.notes : addForm.notes} onChange={editingId !== null ? handleEditChange : handleAddChange} className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Trip</label>
+            <div>
+              <select
+                value={addingTripInline ? '__add_new__' : addForm.trip_id || ''}
+                onChange={handleTripDropdownChange}
+                className="w-full p-2 border rounded"
+                disabled={addingTripInline}
+              >
+                <option value="">No Trip</option>
+                {trips.map(trip => (
+                  <option key={trip.id} value={trip.id}>
+                    {trip.name}
+                  </option>
+                ))}
+                <option value="__add_new__">Add new trip…</option>
+              </select>
+              {addingTripInline && (
+                <form onSubmit={handleAddTripInline} className="mt-2 space-y-2 bg-gray-50 p-3 rounded">
+                  <input
+                    type="text"
+                    placeholder="Trip Name"
+                    value={newTrip.name}
+                    onChange={e => setNewTrip({ ...newTrip, name: e.target.value })}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                  <textarea
+                    placeholder="Description (optional)"
+                    value={newTrip.description}
+                    onChange={e => setNewTrip({ ...newTrip, description: e.target.value })}
+                    className="w-full p-2 border rounded"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setAddingTripInline(false); setNewTrip({ name: '', description: '' }); }}
+                      className="px-4 py-2 border rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
           <div className="flex gap-3 mt-6 justify-end">
-            <button type="button" onClick={handleAddCancel} className="px-5 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold">Cancel</button>
-            <button type="submit" disabled={!isAddValid} className={"px-5 py-3 rounded-xl font-bold " + (isAddValid ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>Add Redemption</button>
+            <button type="button" onClick={editingId !== null ? handleEditCancel : handleAddCancel} className="px-5 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold">Cancel</button>
+            <button type="submit" disabled={!isAddValid} className={"px-5 py-3 rounded-xl font-bold " + (isAddValid ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>{editingId !== null ? 'Save' : 'Add Redemption'}</button>
           </div>
         </form>
       </Modal>
