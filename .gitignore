@@ -67,3 +67,4 @@ tmp/
 
 # GitHub Actions workflows
 # (Workflow YAMLs are tracked; do not store secrets in this directory)
+scripts/
