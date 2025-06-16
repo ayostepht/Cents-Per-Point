@@ -146,11 +146,20 @@ export async function migrateFromSqlite(pgPool) {
   if (!sqliteDbPath) {
     console.log('ℹ️  No SQLite database found, skipping SQLite migration');
     // Create migration flag to prevent future checks
-    fs.writeFileSync(migrationFlagPath, JSON.stringify({
-      timestamp: new Date().toISOString(),
-      status: 'no_sqlite_found',
-      message: 'No SQLite database found'
-    }, null, 2));
+    try {
+      const dataDir = path.dirname(migrationFlagPath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      fs.writeFileSync(migrationFlagPath, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        status: 'no_sqlite_found',
+        message: 'No SQLite database found'
+      }, null, 2));
+    } catch (error) {
+      console.warn('⚠️  Could not write migration flag:', error.message);
+      // Don't throw - let the app start anyway
+    }
     return;
   }
   
