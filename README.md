@@ -40,22 +40,46 @@ docker-compose up -d
 ```
 
 ### Migrating from SQLite
-If you have existing SQLite data, uncomment the volume lines in `docker-compose.yml`:
+If you have existing SQLite data, follow these steps:
 
-```yaml
-# In backend service:
-volumes:
-  - backend_data:/app/data  # Your volume name
+1. **Prepare your data**
+   - Ensure your SQLite database file is named `database.sqlite`
+   - Place it in the `backend/data` directory of your project
 
-# In volumes section:
-volumes:
-  postgres_data:
-  backend_data:  # Your volume name
-```
+2. **Configure Docker volumes**
+   Uncomment the volume lines in `docker-compose.yml`:
+   ```yaml
+   # In backend service:
+   volumes:
+     - backend_data:/app/data  # Your volume name
 
-Then start: `docker-compose up -d`
+   # In volumes section:
+   volumes:
+     postgres_data:
+     backend_data:  # Your volume name
+   ```
 
-The app automatically detects and migrates SQLite data to PostgreSQL.
+3. **Enable migration**
+   Add the following to your `.env` file:
+   ```bash
+   ENABLE_SQLITE_MIGRATION=true
+   ```
+
+4. **Start the application**
+   ```bash
+   docker-compose up -d
+   ```
+
+5. **Verify migration**
+   - Check the backend logs: `docker-compose logs -f backend`
+   - Look for messages like "Successfully migrated X redemptions"
+   - A backup of your SQLite database will be created as `database.sqlite.backup`
+
+6. **After successful migration**
+   - You can set `ENABLE_SQLITE_MIGRATION=false` or remove it from `.env`
+   - The application will now use PostgreSQL exclusively
+
+> **Note**: The migration process is one-way and non-destructive. Your original SQLite database remains unchanged, and a backup is created automatically.
 
 ## ⚙️ Configuration
 

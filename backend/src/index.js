@@ -96,9 +96,13 @@ async function startServer() {
     await migrateSchema(pool);
     console.log('✅ Schema migration completed');
     
-    // Optionally run SQLite migration if SQLite database is detected
-    console.log('🔄 Checking for SQLite database...');
-    await migrateFromSqlite(pool);
+    // Only check for SQLite migration if explicitly enabled
+    if (process.env.ENABLE_SQLITE_MIGRATION === 'true') {
+      console.log('🔄 Checking for SQLite database...');
+      await migrateFromSqlite(pool);
+    } else {
+      console.log('ℹ️  SQLite migration check disabled');
+    }
     
     // Get migration status for logging
     const migrationStatus = getSqliteMigrationStatus();
@@ -107,9 +111,11 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Database: PostgreSQL`);
-      console.log(`🔄 SQLite Migration: ${migrationStatus.status}`);
-      if (migrationStatus.migratedCount) {
-        console.log(`📈 Migrated: ${migrationStatus.migratedCount} redemptions`);
+      if (process.env.ENABLE_SQLITE_MIGRATION === 'true') {
+        console.log(`🔄 SQLite Migration: ${migrationStatus.status}`);
+        if (migrationStatus.migratedCount) {
+          console.log(`📈 Migrated: ${migrationStatus.migratedCount} redemptions`);
+        }
       }
     });
   } catch (error) {
