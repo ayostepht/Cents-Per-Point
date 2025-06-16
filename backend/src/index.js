@@ -3,71 +3,83 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 
 import express from 'express';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import multer from 'multer';
+import csv from 'csv-parser';
+import { createReadStream } from 'fs';
 import { initDb, closeDb, getDb } from './db.js';
-import { autoMigrate, isMigrationComplete, getMigrationStatus } from './migration.js';
+import { migrateSchema, migrateFromSqlite, getSqliteMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
 import importExportRouter from './routes/import-export.js';
 import tripsRouter from './routes/trips.js';
+import rateLimit from 'express-rate-limit';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
 // Configure CORS based on environment
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Development origins
-    const developmentOrigins = [
-      'http://localhost:5173', 
-      'http://localhost:5174'
-    ];
-    
-    // Production/Docker origins - allow any origin for Docker deployments
-    // In production Docker, the frontend will be served from the same host
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    if (isProduction) {
-      // In Docker deployment, allow all origins since we can't predict the domain
-      callback(null, true);
-    } else {
-      // In development, restrict to specific origins
-      if (developmentOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://centsperpoint.com', 'https://www.centsperpoint.com']
+    : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Parse JSON bodies
+app.use(express.json());
 
-// Increase JSON payload limit for file uploads
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(join(__dirname, 'uploads')));
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, join(__dirname, 'uploads'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // Routes
 app.use('/api/redemptions', redemptionsRouter);
 app.use('/api/import-export', importExportRouter);
 app.use('/api/trips', tripsRouter);
 
-// Health check with detailed migration status
-app.get('/health', (req, res) => {
-  const migrationStatus = getMigrationStatus();
-  res.json({ 
-    status: 'OK', 
-    database: 'PostgreSQL',
-    migration: migrationStatus
-  });
+// Health check with basic database connectivity
+app.get('/health', async (req, res) => {
+  try {
+    const pool = await getDb();
+    // Just check if we can connect to the database
+    await pool.query('SELECT 1');
+    res.json({ 
+      status: 'OK',
+      database: 'connected'
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'ERROR',
+      error: 'Database connection failed'
+    });
+  }
 });
 
 // Initialize database and start server
@@ -75,19 +87,27 @@ async function startServer() {
   try {
     // Initialize PostgreSQL database
     await initDb();
-    console.log('✅ PostgreSQL database initialized');
     
-    // Run automatic migration if needed
+    // Get database pool
     const pool = await getDb();
-    await autoMigrate(pool);
-    console.log('✅ Migration check completed');
     
-    const migrationStatus = getMigrationStatus();
+    // Always run schema migration for all users
+    console.log('🔄 Running schema migration...');
+    await migrateSchema(pool);
+    console.log('✅ Schema migration completed');
     
+    // Optionally run SQLite migration if SQLite database is detected
+    console.log('🔄 Checking for SQLite database...');
+    await migrateFromSqlite(pool);
+    
+    // Get migration status for logging
+    const migrationStatus = getSqliteMigrationStatus();
+    
+    // Start the server
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Database: PostgreSQL`);
-      console.log(`🔄 Migration: ${migrationStatus.status}`);
+      console.log(`🔄 SQLite Migration: ${migrationStatus.status}`);
       if (migrationStatus.migratedCount) {
         console.log(`📈 Migrated: ${migrationStatus.migratedCount} redemptions`);
       }
@@ -111,4 +131,5 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Start the server
 startServer(); 

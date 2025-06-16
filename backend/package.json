@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "reset-db": "node src/resetDb.js",
+    "migrate-db": "node src/migrateDb.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

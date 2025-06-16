@@ -6,15 +6,123 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Automatic migration from SQLite to PostgreSQL
- * This runs on startup and migrates data seamlessly for users
+ * Migrate database schema to latest version
+ * This runs for all users on every startup
  */
-export async function autoMigrate(pgPool) {
+export async function migrateSchema(pgPool) {
+  const client = await pgPool.connect();
+  
+  try {
+    // Check if trip_id column exists
+    const columnCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'redemptions' AND column_name = 'trip_id';
+    `);
+    
+    if (columnCheck.rows.length === 0) {
+      console.log('🔄 Adding trip_id column to redemptions table...');
+      await client.query('BEGIN');
+      try {
+        // Add trip_id column
+        await client.query(`
+          ALTER TABLE redemptions 
+          ADD COLUMN trip_id INTEGER REFERENCES trips(id);
+        `);
+        await client.query('COMMIT');
+        console.log('✅ Successfully added trip_id column');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw new Error(`Failed to add trip_id column: ${error.message}`);
+      }
+    }
+
+    // Check if trips table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'trips'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('🔄 Creating trips table...');
+      await client.query('BEGIN');
+      try {
+        await client.query(`
+          CREATE TABLE trips (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            image TEXT,
+            start_date DATE,
+            end_date DATE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('COMMIT');
+        console.log('✅ Successfully created trips table');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw new Error(`Failed to create trips table: ${error.message}`);
+      }
+    }
+
+    // Check if indexes exist
+    const indexCheck = await client.query(`
+      SELECT indexname 
+      FROM pg_indexes 
+      WHERE tablename = 'redemptions' 
+      AND indexname IN ('idx_redemptions_date', 'idx_redemptions_source', 'idx_redemptions_trip_id');
+    `);
+    
+    const existingIndexes = indexCheck.rows.map(row => row.indexname);
+    const missingIndexes = [];
+    
+    if (!existingIndexes.includes('idx_redemptions_date')) {
+      missingIndexes.push('idx_redemptions_date ON redemptions(date)');
+    }
+    if (!existingIndexes.includes('idx_redemptions_source')) {
+      missingIndexes.push('idx_redemptions_source ON redemptions(source)');
+    }
+    if (!existingIndexes.includes('idx_redemptions_trip_id')) {
+      missingIndexes.push('idx_redemptions_trip_id ON redemptions(trip_id)');
+    }
+
+    if (missingIndexes.length > 0) {
+      console.log('🔄 Creating missing indexes...');
+      await client.query('BEGIN');
+      try {
+        for (const index of missingIndexes) {
+          await client.query(`CREATE INDEX IF NOT EXISTS ${index};`);
+        }
+        await client.query('COMMIT');
+        console.log('✅ Successfully created missing indexes');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw new Error(`Failed to create indexes: ${error.message}`);
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Schema migration failed:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Optional migration from SQLite to PostgreSQL
+ * This only runs if SQLite database is detected
+ */
+export async function migrateFromSqlite(pgPool) {
   const migrationFlagPath = path.join(__dirname, '../data/.migrated');
   
   // Check if migration already completed
   if (fs.existsSync(migrationFlagPath)) {
-    console.log('✅ Migration already completed, skipping...');
+    console.log('✅ SQLite migration already completed, skipping...');
     return;
   }
   
@@ -36,22 +144,17 @@ export async function autoMigrate(pgPool) {
   
   // Check if SQLite database exists
   if (!sqliteDbPath) {
-    console.log('ℹ️  No SQLite database found, starting fresh with PostgreSQL');
-    // Create data directory if it doesn't exist
-    const dataDir = path.join(__dirname, '../data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
+    console.log('ℹ️  No SQLite database found, skipping SQLite migration');
     // Create migration flag to prevent future checks
     fs.writeFileSync(migrationFlagPath, JSON.stringify({
       timestamp: new Date().toISOString(),
       status: 'no_sqlite_found',
-      message: 'Started fresh with PostgreSQL'
+      message: 'No SQLite database found'
     }, null, 2));
     return;
   }
   
-  console.log('🔄 SQLite database detected, starting automatic migration...');
+  console.log('🔄 SQLite database detected, starting migration...');
   
   try {
     // Dynamic import of SQLite modules (only when needed)
@@ -157,7 +260,7 @@ export async function autoMigrate(pgPool) {
     }
     
   } catch (error) {
-    console.error('❌ Automatic migration failed:', error);
+    console.error('❌ SQLite migration failed:', error);
     console.log('🔧 Manual migration may be required');
     
     // Create error flag
@@ -183,21 +286,21 @@ export async function autoMigrate(pgPool) {
 }
 
 /**
- * Check if migration is needed (for health checks)
+ * Check if SQLite migration is needed (for health checks)
  */
-export function isMigrationComplete() {
+export function isSqliteMigrationComplete() {
   const migrationFlagPath = path.join(__dirname, '../data/.migrated');
   return fs.existsSync(migrationFlagPath);
 }
 
 /**
- * Get migration status details
+ * Get SQLite migration status details
  */
-export function getMigrationStatus() {
+export function getSqliteMigrationStatus() {
   const migrationFlagPath = path.join(__dirname, '../data/.migrated');
   
   if (!fs.existsSync(migrationFlagPath)) {
-    return { status: 'pending', message: 'Migration not yet attempted' };
+    return { status: 'pending', message: 'SQLite migration not yet attempted' };
   }
   
   try {

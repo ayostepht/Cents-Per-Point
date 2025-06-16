@@ -1,29 +1,24 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+import { getDb, closeDb } from './db.js';
 
-dotenv.config();
-
-const { Pool } = pg;
-
-// PostgreSQL connection pool
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'cpp_database',
-  password: process.env.DB_PASSWORD || 'password',
-  port: process.env.DB_PORT || 5432,
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
-export async function getDb() {
-  return pool;
-}
-
-export async function initDb() {
+async function resetDb() {
+  const pool = await getDb();
   const client = await pool.connect();
+  
   try {
+    // Drop existing tables and indexes
+    await client.query('BEGIN');
+    try {
+      await client.query(`
+        DROP TABLE IF EXISTS redemptions CASCADE;
+        DROP TABLE IF EXISTS trips CASCADE;
+      `);
+      await client.query('COMMIT');
+      console.log('Successfully dropped existing tables');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error(`Failed to drop tables: ${error.message}`);
+    }
+
     // Create trips table
     await client.query('BEGIN');
     try {
@@ -40,6 +35,7 @@ export async function initDb() {
         );
       `);
       await client.query('COMMIT');
+      console.log('Successfully created trips table');
     } catch (error) {
       await client.query('ROLLBACK');
       throw new Error(`Failed to create trips table: ${error.message}`);
@@ -64,12 +60,13 @@ export async function initDb() {
         );
       `);
       await client.query('COMMIT');
+      console.log('Successfully created redemptions table');
     } catch (error) {
       await client.query('ROLLBACK');
       throw new Error(`Failed to create redemptions table: ${error.message}`);
     }
-    
-    // Verify table structure before creating indexes
+
+    // Verify table structure
     const tableCheck = await client.query(`
       SELECT column_name 
       FROM information_schema.columns 
@@ -79,8 +76,9 @@ export async function initDb() {
     if (tableCheck.rows.length === 0) {
       throw new Error('trip_id column not found in redemptions table');
     }
+    console.log('Verified table structure');
 
-    // Create indexes in a separate transaction
+    // Create indexes
     await client.query('BEGIN');
     try {
       await client.query(`
@@ -89,19 +87,32 @@ export async function initDb() {
         CREATE INDEX IF NOT EXISTS idx_redemptions_trip_id ON redemptions(trip_id);
       `);
       await client.query('COMMIT');
+      console.log('Successfully created indexes');
     } catch (error) {
       await client.query('ROLLBACK');
       throw new Error(`Failed to create indexes: ${error.message}`);
     }
 
   } catch (error) {
+    console.error('Error resetting database:', error);
     throw error;
   } finally {
     client.release();
+    await closeDb();
   }
 }
 
-// Graceful shutdown
-export async function closeDb() {
-  await pool.end();
-} 
+// Run the reset if this file is executed directly
+if (process.argv[1] === import.meta.url) {
+  resetDb()
+    .then(() => {
+      console.log('Database reset completed successfully');
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('Database reset failed:', error);
+      process.exit(1);
+    });
+}
+
+export { resetDb }; 
