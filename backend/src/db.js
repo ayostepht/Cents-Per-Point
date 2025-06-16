@@ -68,17 +68,6 @@ export async function initDb() {
       await client.query('ROLLBACK');
       throw new Error(`Failed to create redemptions table: ${error.message}`);
     }
-    
-    // Verify table structure before creating indexes
-    const tableCheck = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'redemptions' AND column_name = 'trip_id';
-    `);
-    
-    if (tableCheck.rows.length === 0) {
-      throw new Error('trip_id column not found in redemptions table');
-    }
 
     // Create indexes in a separate transaction
     await client.query('BEGIN');
