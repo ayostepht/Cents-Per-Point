@@ -159,6 +159,7 @@ jobs:
           fi
 
       - name: Smoke test backend
+        id: backend-test
         run: |
           # Start the backend container
           docker run -d --name backend-test \
@@ -188,15 +189,15 @@ jobs:
             exit 1
           fi
           
-          # Cleanup
-          docker stop backend-test
-          docker rm backend-test
+          echo "backend_ready=true" >> $GITHUB_OUTPUT
 
       - name: Smoke test frontend
+        if: steps.backend-test.outputs.backend_ready == 'true'
         run: |
           # Start the frontend container
           docker run -d --name frontend-test \
             --link backend-test:backend \
+            -e VITE_API_URL=http://backend:5000 \
             -p 3000:3000 \
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
           
@@ -220,5 +221,7 @@ jobs:
           # Cleanup
           docker stop frontend-test
           docker rm frontend-test
+          docker stop backend-test
+          docker rm backend-test
           docker stop postgres-test
           docker rm postgres-test 
