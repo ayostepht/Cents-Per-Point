@@ -92,10 +92,47 @@ jobs:
           git commit -m "docs: update release notes for $NEW_TAG"
           git push origin main
 
-      - name: Trigger Docker Build
+      - name: Verify Docker Build
         run: |
           NEW_TAG=${{ steps.create_tag.outputs.new_tag }}
-          # Verify Docker build was triggered
-          echo "Verifying Docker build for tag: $NEW_TAG"
-          # Add your Docker build verification logic here
-          # For example, you could check the GitHub Actions API for the build status 
+          REPO_NAME=${{ github.repository }}
+          
+          # Wait for the Docker build workflow to start
+          echo "Waiting for Docker build workflow to start..."
+          sleep 30
+          
+          # Get the workflow run ID for the Docker build
+          WORKFLOW_RUNS=$(gh api repos/$REPO_NAME/actions/runs \
+            --jq '.workflow_runs[] | select(.head_branch=="'$NEW_TAG'") | .id')
+          
+          if [ -z "$WORKFLOW_RUNS" ]; then
+            echo "Error: Could not find Docker build workflow for tag $NEW_TAG"
+            exit 1
+          fi
+          
+          # Get the most recent run
+          WORKFLOW_RUN_ID=$(echo "$WORKFLOW_RUNS" | head -n 1)
+          
+          # Wait for the workflow to complete (max 10 minutes)
+          MAX_ATTEMPTS=20
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            STATUS=$(gh api repos/$REPO_NAME/actions/runs/$WORKFLOW_RUN_ID \
+              --jq '.conclusion')
+            
+            if [ "$STATUS" = "success" ]; then
+              echo "Docker build completed successfully"
+              exit 0
+            elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "cancelled" ]; then
+              echo "Docker build failed or was cancelled"
+              exit 1
+            fi
+            
+            echo "Docker build still in progress... (attempt $ATTEMPT of $MAX_ATTEMPTS)"
+            sleep 30
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "Error: Docker build did not complete within the timeout period"
+          exit 1 
