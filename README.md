@@ -83,19 +83,43 @@ If you have existing SQLite data, follow these steps:
 
 ## ⚙️ Configuration
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 3000 | Web interface |
+| Service | Default Port | Description |
+|---------|-------------|-------------|
+| Frontend | 3000 | Web interface (can be mapped to different ports) |
 | Backend | 5000 | REST API |
+| PostgreSQL | 5432 | Database |
 | Health Check | http://localhost:5000/health | Status & migration info |
 
 ### Environment Variables
+Create a `.env` file in the project root with the following variables:
+
 ```bash
-# Optional: Set custom password in .env file
-DB_PASSWORD=your-secure-password
+# Database Configuration (Required)
+DB_PASSWORD=your-secure-password        # Used by both PostgreSQL and backend services
+
+# PostgreSQL Service Configuration
+POSTGRES_DB=cpp_database               # Database name
+POSTGRES_USER=postgres                 # Database user
+POSTGRES_PASSWORD=${DB_PASSWORD}       # References DB_PASSWORD
+
+# Backend Service Configuration
+DB_HOST=postgres                       # PostgreSQL service hostname
+DB_NAME=cpp_database                   # Database name
+DB_USER=postgres                       # Database user
+DB_PASSWORD=${DB_PASSWORD}            # References DB_PASSWORD
+DB_PORT=5432                          # Database port
+
+# SQLite Migration (Optional)
+ENABLE_SQLITE_MIGRATION=true          # Only set if migrating from SQLite
 ```
 
-## 📚 API Reference
+> **Important**: 
+> - Set a secure `DB_PASSWORD` in your `.env` file
+> - This password is used by both PostgreSQL and backend services
+> - The default password is only for development
+> - Port mappings can be customized in docker-compose.yml if needed
+
+## �� API Reference
 
 ### Redemptions
 - `GET /api/redemptions` - List all redemptions
