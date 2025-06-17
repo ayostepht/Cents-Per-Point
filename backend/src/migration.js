@@ -106,6 +106,10 @@ export async function migrateSchema(pgPool) {
     // Rollback transaction on error
     await client.query('ROLLBACK');
     console.error('❌ Schema migration failed:', error);
+    console.error('❗ ACTION REQUIRED: The database schema migration did not complete.');
+    console.error('   This is often due to a previous failed migration or a missing column/table.');
+    console.error('   Please check your database schema and consider running the following SQL manually:');
+    console.error("   ALTER TABLE redemptions ADD COLUMN IF NOT EXISTS trip_id INTEGER REFERENCES trips(id);");
     throw error;
   } finally {
     client.release();
