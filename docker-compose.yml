@@ -19,9 +19,7 @@ services:
       start_period: 10s
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: stephtanner1/cpp-backend:latest
     environment:
       - NODE_ENV=production
       - PORT=5001
@@ -44,16 +42,21 @@ services:
       start_period: 10s
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: stephtanner1/cpp-frontend:latest
     environment:
-      - VITE_API_URL=http://localhost:5001
+      - VITE_API_URL=http://backend:5001
+      - PORT=${FRONTEND_PORT:-5173}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     depends_on:
       - backend
     restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
