@@ -13,29 +13,8 @@ export async function migrateSchema(pgPool) {
   const client = await pgPool.connect();
   
   try {
-    // Check if trip_id column exists
-    const columnCheck = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'redemptions' AND column_name = 'trip_id';
-    `);
-    
-    if (columnCheck.rows.length === 0) {
-      console.log('🔄 Adding trip_id column to redemptions table...');
-      await client.query('BEGIN');
-      try {
-        // Add trip_id column
-        await client.query(`
-          ALTER TABLE redemptions 
-          ADD COLUMN trip_id INTEGER REFERENCES trips(id);
-        `);
-        await client.query('COMMIT');
-        console.log('✅ Successfully added trip_id column');
-      } catch (error) {
-        await client.query('ROLLBACK');
-        throw new Error(`Failed to add trip_id column: ${error.message}`);
-      }
-    }
+    // Start transaction
+    await client.query('BEGIN');
 
     // Check if trips table exists
     const tableCheck = await client.query(`
@@ -47,7 +26,6 @@ export async function migrateSchema(pgPool) {
     
     if (!tableCheck.rows[0].exists) {
       console.log('🔄 Creating trips table...');
-      await client.query('BEGIN');
       try {
         await client.query(`
           CREATE TABLE trips (
@@ -61,15 +39,33 @@ export async function migrateSchema(pgPool) {
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
         `);
-        await client.query('COMMIT');
         console.log('✅ Successfully created trips table');
       } catch (error) {
-        await client.query('ROLLBACK');
         throw new Error(`Failed to create trips table: ${error.message}`);
       }
     }
 
-    // Check if indexes exist
+    // Check if trip_id column exists
+    const columnCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'redemptions' AND column_name = 'trip_id';
+    `);
+    
+    if (columnCheck.rows.length === 0) {
+      console.log('🔄 Adding trip_id column to redemptions table...');
+      try {
+        await client.query(`
+          ALTER TABLE redemptions 
+          ADD COLUMN trip_id INTEGER REFERENCES trips(id);
+        `);
+        console.log('✅ Successfully added trip_id column');
+      } catch (error) {
+        throw new Error(`Failed to add trip_id column: ${error.message}`);
+      }
+    }
+
+    // Check and create indexes
     const indexCheck = await client.query(`
       SELECT indexname 
       FROM pg_indexes 
@@ -92,20 +88,23 @@ export async function migrateSchema(pgPool) {
 
     if (missingIndexes.length > 0) {
       console.log('🔄 Creating missing indexes...');
-      await client.query('BEGIN');
       try {
         for (const index of missingIndexes) {
           await client.query(`CREATE INDEX IF NOT EXISTS ${index};`);
         }
-        await client.query('COMMIT');
         console.log('✅ Successfully created missing indexes');
       } catch (error) {
-        await client.query('ROLLBACK');
         throw new Error(`Failed to create indexes: ${error.message}`);
       }
     }
 
+    // Commit transaction
+    await client.query('COMMIT');
+    console.log('✅ Schema migration completed successfully');
+
   } catch (error) {
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
     console.error('❌ Schema migration failed:', error);
     throw error;
   } finally {
