@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 // Rate limiting
 const limiter = rateLimit({
@@ -34,9 +34,10 @@ app.use(limiter);
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://centsperpoint.com', 'https://www.centsperpoint.com']
-    : '*',
+    : true, // Allow all origins in development
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Allow credentials (cookies, authorization headers, etc.)
 };
 
 app.use(cors(corsOptions));
