@@ -19,15 +19,23 @@ const isCustomDockerSetup = () => {
 };
 
 const getApiUrl = () => {
+  // Debug logging
+  console.log('VITE_API_URL from env:', import.meta.env.VITE_API_URL);
+  console.log('NODE_ENV:', import.meta.env.NODE_ENV);
+  console.log('All env vars:', import.meta.env);
+  
   // Use VITE_API_URL if provided (for Docker/production environments)
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.NODE_ENV === 'production') {
+    console.log('Using production localhost fallback');
     return 'http://localhost:5000';
   }
   // For local development, use 5001
+  console.log('Using development fallback');
   return `http://${window.location.hostname}:5001`;
 };
 
