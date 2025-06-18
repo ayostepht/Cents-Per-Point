@@ -19,6 +19,11 @@ const isCustomDockerSetup = () => {
 };
 
 const getApiUrl = () => {
+  // Use VITE_API_URL if provided (for Docker/production environments)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
   if (process.env.NODE_ENV === 'production') {
     return 'http://localhost:5000';
   }

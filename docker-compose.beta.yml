@@ -37,7 +37,7 @@ services:
   frontend:
     image: stephtanner1/cpp-frontend:beta
     environment:
-      - VITE_API_URL=http://localhost:5000
+      - VITE_API_URL=http://backend:5000
     ports:
       - 3333:3000
     depends_on:
