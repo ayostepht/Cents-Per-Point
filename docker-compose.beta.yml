@@ -17,7 +17,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
   backend:
     image: stephtanner1/cpp-backend:beta
     environment:
@@ -33,18 +32,13 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-
   frontend:
     image: stephtanner1/cpp-frontend:beta
-    environment:
-      - VITE_API_URL=http://backend:5000
     ports:
       - 3333:3000
     depends_on:
       - backend
     restart: unless-stopped
-
 volumes:
   postgres_data: null
-
 networks: {}
