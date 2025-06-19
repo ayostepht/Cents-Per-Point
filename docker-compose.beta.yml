@@ -35,9 +35,6 @@ services:
     restart: unless-stopped
   frontend:
     image: stephtanner1/cpp-frontend:beta
-    environment:
-      - VITE_API_URL=__DYNAMIC__
-      - VITE_BACKEND_PORT=${BACKEND_PORT:-5000}
     ports:
       - "${FRONTEND_PORT:-3333}:3000"
     depends_on:
