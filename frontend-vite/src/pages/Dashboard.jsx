@@ -103,15 +103,15 @@ const CustomPieTooltip = ({ active, payload }) => {
 
 function MetricCard({ title, value, icon }) {
   return (
-    <div className="bg-white p-3 sm:p-4 md:p-2 lg:p-2.5 xl:p-4 rounded-xl shadow border border-gray-100 flex items-center gap-2 sm:gap-3 md:gap-2 lg:gap-2.5 xl:gap-4 min-w-0">
-      <div className="p-2 sm:p-3 md:p-1.5 lg:p-1.5 xl:p-3 bg-gray-100 rounded-full text-base sm:text-lg md:text-base lg:text-base xl:text-lg flex items-center justify-center flex-shrink-0" style={{ minWidth: 28, minHeight: 28 }}>
-        <span style={{ fontSize: '1rem' }} className="md:text-base lg:text-base xl:text-lg">{icon}</span>
+    <div className="bg-white p-2 sm:p-3 md:p-1.5 lg:p-2 xl:p-2.5 rounded-xl shadow border border-gray-100 flex flex-col justify-between min-w-0 relative" style={{minHeight: 80}}>
+      <div className="absolute top-2 right-2 text-base sm:text-lg md:text-base lg:text-base xl:text-lg flex items-center justify-center flex-shrink-0 opacity-80">
+        {icon}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm md:text-xs lg:text-xs xl:text-sm text-gray-500 font-medium mb-1 leading-tight" title={title}>
+      <div className="min-w-0 flex-1 flex flex-col items-center justify-center">
+        <p className="text-xs sm:text-sm md:text-xs lg:text-xs xl:text-sm text-gray-500 font-medium mb-1 leading-tight pr-6 w-full text-left" title={title}>
           <span className="block truncate">{title}</span>
         </p>
-        <p className="text-sm sm:text-lg md:text-base lg:text-base xl:text-lg 2xl:text-2xl font-extrabold text-gray-900 break-words leading-tight">{value}</p>
+        <p className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900 break-words leading-tight text-center">{value}</p>
       </div>
     </div>
   );
