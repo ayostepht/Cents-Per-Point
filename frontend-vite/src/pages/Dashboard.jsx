@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
-import { useNavigate } from 'react-router-dom';
 import API_URL from '../config';
 import { MultiSelect } from 'react-multi-select-component';
 import { Plane } from 'lucide-react';
@@ -9,6 +8,46 @@ import { Plane } from 'lucide-react';
 const COLORS = ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#8884d8', '#82ca9d', '#A4DE6C', '#D0ED57', '#FFC658'];
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
+
+// Helper function to format large numbers more compactly for small screens
+const formatCompactNumber = (num) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toLocaleString();
+};
+
+// Helper function to format currency compactly for small screens
+const formatCompactCurrency = (num) => {
+  if (num >= 1000000) {
+    return '$' + (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return '$' + (num / 1000).toFixed(1) + 'K';
+  }
+  return usd(num);
+};
+
+// Helper function to format numbers for medium screens (less aggressive than mobile)
+const formatMediumNumber = (num) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 100000) {
+    return (num / 1000).toFixed(0) + 'K';
+  }
+  return num.toLocaleString();
+};
+
+// Helper function to format currency for medium screens
+const formatMediumCurrency = (num) => {
+  if (num >= 1000000) {
+    return '$' + (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 10000) {
+    return '$' + (num / 1000).toFixed(0) + 'K';
+  }
+  return usd(num);
+};
 
 // Custom date formatter for cleaner x-axis labels
 const formatDateForChart = (dateStr) => {
@@ -32,30 +71,6 @@ const formatDateTick = (tickItem, index, ticks) => {
     return formatDateForChart(tickItem);
   }
   return '';
-};
-
-// Custom label for pie chart with better positioning
-const renderCustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }) => {
-  if (percent < 0.05) return null; // Don't show labels for slices less than 5%
-  
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      fontSize="12"
-      fontWeight="bold"
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
 };
 
 // Custom tooltip for pie chart with Type, %, Amount
@@ -88,11 +103,15 @@ const CustomPieTooltip = ({ active, payload }) => {
 
 function MetricCard({ title, value, icon }) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow border border-gray-100 flex items-center gap-4">
-      <div className="p-4 bg-gray-100 rounded-full text-2xl flex items-center justify-center">{icon}</div>
-      <div>
-        <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
-        <p className="text-3xl font-extrabold text-gray-900">{value}</p>
+    <div className="bg-white p-2 sm:p-3 md:p-1.5 lg:p-2 xl:p-2.5 rounded-xl shadow border border-gray-100 flex flex-col justify-between min-w-0 relative" style={{minHeight: 80}}>
+      <div className="absolute top-2 right-2 text-base sm:text-lg md:text-base lg:text-base xl:text-lg flex items-center justify-center flex-shrink-0 opacity-80">
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1 flex flex-col items-center justify-center">
+        <p className="text-xs sm:text-sm md:text-xs lg:text-xs xl:text-sm text-gray-500 font-medium mb-1 leading-tight pr-6 w-full text-left" title={title}>
+          <span className="block truncate">{title}</span>
+        </p>
+        <p className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900 break-words leading-tight text-center">{value}</p>
       </div>
     </div>
   );
@@ -100,10 +119,8 @@ function MetricCard({ title, value, icon }) {
 
 export default function Dashboard() {
   const [redemptions, setRedemptions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', trip: [] });
   const [trips, setTrips] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -112,8 +129,7 @@ export default function Dashboard() {
     ]).then(([redemptionsRes, tripsRes]) => {
       setRedemptions(redemptionsRes.data);
       setTrips(tripsRes.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {/* setLoading(false); */});
   }, []);
 
   // Data prep
@@ -202,7 +218,7 @@ export default function Dashboard() {
   const uniqueSources = Array.from(new Set(filtered.map(r => r.source))).filter(Boolean);
   const allDates = Array.from(new Set(filtered.map(r => r.date))).sort();
   const sourceCumulatives = {};
-  uniqueSources.forEach((src, i) => {
+  uniqueSources.forEach((src) => {
     let cum = 0;
     sourceCumulatives[src] = allDates.map(date => {
       const pts = filtered.filter(r => r.source === src && r.date === date).reduce((sum, r) => sum + (Number(r.points) || 0), 0);
@@ -210,37 +226,7 @@ export default function Dashboard() {
       return { date, [src]: cum };
     });
   });
-  const mergedCumulatives = allDates.map(date => {
-    const entry = { date };
-    uniqueSources.forEach(src => {
-      const found = sourceCumulatives[src].find(d => d.date === date);
-      entry[src] = found ? found[src] : null;
-    });
-    return entry;
-  });
 
-  const bySource = Object.values(filtered.reduce((acc, r) => {
-    if (!acc[r.source]) acc[r.source] = { source: r.source, count: 0, cppSum: 0, cppCount: 0 };
-    acc[r.source].count += 1;
-    const cpp = r.points > 0 ? ((r.value - (r.taxes || 0)) / r.points) * 100 : null;
-    if (cpp !== null && !isNaN(cpp)) {
-      acc[r.source].cppSum += cpp;
-      acc[r.source].cppCount += 1;
-    }
-    return acc;
-  }, {}));
-
-  const topSources = [...bySource].sort((a, b) => b.count - a.count).slice(0, 3);
-
-  const avgCppBySource = bySource.map((s, i) => ({
-    source: s.source,
-    avgCpp: s.cppCount ? s.cppSum / s.cppCount : null,
-    fill: COLORS[i % COLORS.length]
-  })).filter(s => s.avgCpp !== null && !isNaN(s.avgCpp));
-
-  const topRedemptions = [...filtered].sort((a, b) => b.value - a.value).slice(0, 5);
-
-  // Best and worst redemptions
   const bestRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
   const worstRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
 
@@ -310,13 +296,13 @@ export default function Dashboard() {
           </div>
         </div>
         {/* Summary Statistics Card */}
-        <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
-            <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-green-500">$</span>} />
-            <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
-            <MetricCard title="Total Redemptions" value={filtered.length} icon={<span className="text-orange-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>} />
-            <MetricCard title="Total Trips" value={trips.length} icon={<span className="text-cyan-500"><Plane size={24} /></span>} />
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-8 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
+            <MetricCard title="Total Value Redeemed" value={<><span className="hidden lg:inline">{usd(totalValue)}</span><span className="hidden sm:inline lg:hidden">{formatMediumCurrency(totalValue)}</span><span className="sm:hidden">{formatCompactCurrency(totalValue)}</span></>} icon={<span className="text-green-500">$</span>} />
+            <MetricCard title="Total Points Redeemed" value={<><span className="hidden lg:inline">{totalPoints.toLocaleString()}</span><span className="hidden sm:inline lg:hidden">{formatMediumNumber(totalPoints)}</span><span className="sm:hidden">{formatCompactNumber(totalPoints)}</span></>} icon={<span className="text-purple-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
+            <MetricCard title="Total Redemptions" value={filtered.length} icon={<span className="text-orange-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>} />
+            <MetricCard title="Total Trips" value={trips.length} icon={<span className="text-cyan-500"><Plane size={18} className="xl:w-5 xl:h-5" /></span>} />
           </div>
         </div>
 
