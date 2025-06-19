@@ -69,19 +69,8 @@ export async function initDb() {
       throw new Error(`Failed to create redemptions table: ${error.message}`);
     }
 
-    // Create indexes in a separate transaction
-    await client.query('BEGIN');
-    try {
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_redemptions_date ON redemptions(date);
-        CREATE INDEX IF NOT EXISTS idx_redemptions_source ON redemptions(source);
-        CREATE INDEX IF NOT EXISTS idx_redemptions_trip_id ON redemptions(trip_id);
-      `);
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw new Error(`Failed to create indexes: ${error.message}`);
-    }
+    // Note: Indexes are now created in the schema migration process
+    // This ensures proper column existence checks before index creation
 
   } catch (error) {
     throw error;
