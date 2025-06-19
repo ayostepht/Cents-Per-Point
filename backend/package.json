@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "reset-db": "node src/resetDb.js",
+    "migrate-db": "node src/migrateDb.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "pg": "^8.13.1",
     "dotenv": "^16.4.7",
     "multer": "^2.0.1",
-    "csv-parser": "^3.0.0"
+    "csv-parser": "^3.0.0",
+    "express-rate-limit": "^7.5.0"
   },
   "optionalDependencies": {
     "sqlite": "^5.1.1",

@@ -3,6 +3,7 @@ import { getDb } from '../db.js';
 import multer from 'multer';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
@@ -188,7 +189,13 @@ router.post('/analyze', upload.single('csvFile'), async (req, res) => {
 });
 
 // Import redemptions from CSV with column mapping
-router.post('/import', upload.any(), async (req, res) => {
+const importRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+router.post('/import', importRateLimiter, upload.any(), async (req, res) => {
   // Find the CSV file in the uploaded files
   const file = req.files?.find(f => f.fieldname === 'csvFile' || f.fieldname === 'file');
   if (!file) {

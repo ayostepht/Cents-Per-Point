@@ -2,40 +2,35 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: cpp_database
+      POSTGRES_DB: centsperpoint
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   backend:
-    image: stephtanner1/cpp-backend
+    image: stephtanner1/cpp-backend:latest
     environment:
-      DB_HOST: postgres
-      DB_NAME: cpp_database
-      DB_USER: postgres
-      DB_PASSWORD: ${DB_PASSWORD:-securepassword123}
-      DB_PORT: 5432
+      - DB_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5000:5000" 
+      - "5000:5000"
     # Optional: Mount SQLite data if migrating from a previous sqlite version
     # volumes:
     #  - backend_data:/app/data 
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     restart: unless-stopped
 
   frontend:
-    image: stephtanner1/cpp-frontend
+    image: stephtanner1/cpp-frontend:latest
+    # Uncomment VITE_API_URL only if you change the backend port above
+    # Replace YOUR_SERVER_IP with localhost (local) or your server's IP (remote)
+    # Example: VITE_API_URL=http://192.168.0.100:8080
+    # environment:
+    #   - VITE_API_URL=http://YOUR_SERVER_IP:BACKEND_PORT
     ports:
       - "3000:3000"
     depends_on:
@@ -44,4 +39,4 @@ services:
 
 volumes:
   postgres_data:
-  # backend_data: -- optional, uncomment if migrating from a previous sqlite version
+# backend_data: -- optional, uncomment if migrating from a previous sqlite version

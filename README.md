@@ -22,56 +22,124 @@
 
 ## 🚀 Quick Start
 
+**Step 1:** Create a `.env` file with your database password:
 ```bash
-# Download and start
+echo "DB_PASSWORD=your-secure-password" > .env
+```
+
+**Step 2:** Download and start:
+```bash
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 docker-compose up -d
+```
 
-# Open your browser
+**Step 3:** Open your browser:
+```bash
+# Local access
 open http://localhost:3000
+
+# Remote access (replace IP with your server's IP)
+open http://192.168.0.100:3000
 ```
 
-## 📦 Installation & Migration
+## 📦 Docker Compose Configuration
 
-### New Installation
-```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
-docker-compose up -d
-```
-
-### Migrating from SQLite
-If you have existing SQLite data, uncomment the volume lines in `docker-compose.yml`:
-
+### Complete docker-compose.yml
 ```yaml
-# In backend service:
-volumes:
-  - backend_data:/app/data  # Your volume name
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: centsperpoint
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
 
-# In volumes section:
+  backend:
+    image: stephtanner1/cpp-backend:latest
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5000:5000"
+    # Optional: Mount SQLite data if migrating from a previous sqlite version
+    # volumes:
+    #  - backend_data:/app/data 
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    image: stephtanner1/cpp-frontend:latest
+    # Uncomment VITE_API_URL only if you change the backend port above
+    # Replace YOUR_SERVER_IP with localhost (local) or your server's IP (remote)
+    # Example: VITE_API_URL=http://192.168.0.100:8080
+    # environment:
+    #   - VITE_API_URL=http://YOUR_SERVER_IP:BACKEND_PORT
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
-  backend_data:  # Your volume name
+# backend_data: -- optional, uncomment if migrating from a previous sqlite version
 ```
 
-Then start: `docker-compose up -d`
+### SQLite Migration
+To migrate existing SQLite data:
 
-The app automatically detects and migrates SQLite data to PostgreSQL.
+1. Uncomment the volume lines in `docker-compose.yml` (lines marked with `# Optional`)
+2. Add `ENABLE_SQLITE_MIGRATION=true` to your `.env` file
+3. Run `docker-compose up -d`
+4. Check logs: `docker-compose logs -f backend`
+
+Migration is automatic and non-destructive (creates a backup).
 
 ## ⚙️ Configuration
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 3000 | Web interface |
-| Backend | 5000 | REST API |
-| Health Check | http://localhost:5000/health | Status & migration info |
+### Default Ports
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend | 3000 | http://localhost:3000 |
+| Backend API | 5000 | http://localhost:5000/health |
+| PostgreSQL | 5432 | Internal only |
+
+### Custom Ports
+To use different ports, edit the `ports` section in `docker-compose.yml`:
+```yaml
+ports:
+  - "8080:5000"  # Backend now accessible on port 8080
+```
+
+**Important:** If you change the backend port, also uncomment and set `VITE_API_URL`:
+```yaml
+# In frontend service:
+environment:
+  - VITE_API_URL=http://localhost:8080     # For local access
+  # - VITE_API_URL=http://192.168.0.100:8080  # For remote access
+```
+
+> **Note:** The frontend automatically detects Docker environments and constructs API URLs, but custom backend ports require explicit `VITE_API_URL` configuration.
 
 ### Environment Variables
+**Required:** Create a `.env` file with your database password:
 ```bash
-# Optional: Set custom password in .env file
 DB_PASSWORD=your-secure-password
 ```
 
-## 📚 API Reference
+**Optional:** For SQLite migration only:
+```bash
+ENABLE_SQLITE_MIGRATION=true
+```
+
+> **Remote Access:** Works automatically via your server's IP address (e.g., `http://192.168.0.100:3000`). The frontend automatically detects the environment and constructs the correct API URLs.
+
+## �� API Reference
 
 ### Redemptions
 - `GET /api/redemptions` - List all redemptions
@@ -87,8 +155,11 @@ DB_PASSWORD=your-secure-password
 
 **Example:**
 ```bash
-# Export data
+# Export data (local)
 curl http://localhost:5000/api/import-export/export -o backup.csv
+
+# Export data (remote - replace with your server IP)
+curl http://192.168.0.100:5000/api/import-export/export -o backup.csv
 
 # Create redemption
 curl -X POST http://localhost:5000/api/redemptions \

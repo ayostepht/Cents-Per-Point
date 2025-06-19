@@ -3,6 +3,8 @@ import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config';
+import { MultiSelect } from 'react-multi-select-component';
+import { Plane } from 'lucide-react';
 
 const COLORS = ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#8884d8', '#82ca9d', '#A4DE6C', '#D0ED57', '#FFC658'];
 
@@ -99,30 +101,35 @@ function MetricCard({ title, value, icon }) {
 export default function Dashboard() {
   const [redemptions, setRedemptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ source: '', dateFrom: '', dateTo: '' });
+  const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', trip: [] });
+  const [trips, setTrips] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/redemptions`)
-      .then(res => {
-        setRedemptions(res.data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.all([
+      axios.get(`${API_URL}/api/redemptions`),
+      axios.get(`${API_URL}/api/trips`)
+    ]).then(([redemptionsRes, tripsRes]) => {
+      setRedemptions(redemptionsRes.data);
+      setTrips(tripsRes.data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   // Data prep
   const filtered = useMemo(() => redemptions.filter(r => {
-    if (filters.source && r.source !== filters.source) return false;
+    if (filters.source.length > 0 && !filters.source.includes(r.source)) return false;
     if (filters.dateFrom && r.date < filters.dateFrom) return false;
     if (filters.dateTo && r.date > filters.dateTo) return false;
+    if (filters.trip.length > 0 && !filters.trip.includes(r.trip_id)) return false;
     return true;
   }), [redemptions, filters]);
 
-  const cppArr = filtered.map(r => r.points > 0 ? ((r.value - (r.taxes || 0)) / r.points) * 100 : null).filter(x => x !== null && !isNaN(x));
-  const avgCpp = cppArr.length ? (cppArr.reduce((a, b) => a + b, 0) / cppArr.length) : null;
+  // Calculate average CPP as (sum(value - taxes) / sum(points)) * 100
+  const totalValueMinusTaxes = filtered.reduce((sum, r) => sum + (Number(r.value) - Number(r.taxes || 0)), 0);
+  const totalPoints = filtered.reduce((sum, r) => sum + Number(r.points), 0);
+  const avgCpp = totalPoints > 0 ? (totalValueMinusTaxes / totalPoints) * 100 : null;
   const totalValue = filtered.reduce((sum, r) => sum + (parseFloat(r.value) - parseFloat(r.taxes || 0)), 0);
-  const totalPoints = filtered.reduce((sum, r) => sum + parseFloat(r.points), 0);
 
   const cppBySourceData = useMemo(() => {
     if (!filtered.length) return [];
@@ -242,13 +249,74 @@ export default function Dashboard() {
   return (
     <div className="w-full">
       <div className="max-w-7xl mx-auto px-6 py-8">
+        <h2 className="text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">Dashboard</h2>
+        {/* Filter Card (compact) */}
+        <div className="bg-gray-50 rounded-xl shadow-sm p-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            {/* Trip Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Trip</label>
+              <MultiSelect
+                options={trips.map(trip => ({ label: trip.name, value: trip.id }))}
+                value={filters.trip.map(id => ({ label: trips.find(t => t.id === id)?.name, value: id })).filter(Boolean)}
+                onChange={selected => setFilters(f => ({ ...f, trip: selected.map(opt => opt.value) }))}
+                labelledBy="Select Trip"
+                className="min-w-[120px]"
+                hasSelectAll={false}
+                overrideStrings={{ selectSomeItems: 'Select Trip(s)', allItemsAreSelected: 'All Trips', search: 'Search...' }}
+              />
+            </div>
+            {/* Source Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Source</label>
+              <MultiSelect
+                options={Array.from(new Set(redemptions.map(r => r.source))).filter(Boolean).map(source => ({ label: source, value: source }))}
+                value={filters.source.map(source => ({ label: source, value: source }))}
+                onChange={selected => setFilters(f => ({ ...f, source: selected.map(opt => opt.value) }))}
+                labelledBy="Select Source"
+                className="min-w-[120px]"
+                hasSelectAll={false}
+                overrideStrings={{ selectSomeItems: 'Select Source(s)', allItemsAreSelected: 'All Sources', search: 'Search...' }}
+              />
+            </div>
+            {/* Date From Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Date From</label>
+              <input
+                type="date"
+                value={filters.dateFrom || ''}
+                onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
+                className="w-full p-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+              />
+            </div>
+            {/* Date To Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Date To</label>
+              <input
+                type="date"
+                value={filters.dateTo || ''}
+                onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
+                className="w-full p-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-2 flex justify-end">
+            <button
+              onClick={() => setFilters({ source: [], dateFrom: '', dateTo: '', trip: [] })}
+              className="px-3 py-1 text-xs font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+        {/* Summary Statistics Card */}
         <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">Dashboard</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
             <MetricCard title="Total Value Redeemed" value={usd(totalValue)} icon={<span className="text-green-500">$</span>} />
             <MetricCard title="Total Points Redeemed" value={totalPoints.toLocaleString()} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
-            <MetricCard title="Total Redemptions" value={filtered.length.toLocaleString()} icon={<span className="text-indigo-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>} />
+            <MetricCard title="Total Redemptions" value={filtered.length} icon={<span className="text-orange-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>} />
+            <MetricCard title="Total Trips" value={trips.length} icon={<span className="text-cyan-500"><Plane size={24} /></span>} />
           </div>
         </div>
 

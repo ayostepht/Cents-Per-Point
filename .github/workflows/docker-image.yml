@@ -8,21 +8,26 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Use GitHub Secrets for sensitive information
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3.1.0
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v3.1.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -32,13 +37,24 @@ jobs:
         id: extract_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: 'arm64,amd64'
+
       - name: Build and push backend image (main)
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache,mode=max
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
 
       - name: Build and push backend image (beta)
         if: github.ref == 'refs/heads/beta'
@@ -46,7 +62,13 @@ jobs:
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache,mode=max
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:beta
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
 
       - name: Build and push backend image (version tag)
         if: startsWith(github.ref, 'refs/tags/v')
@@ -54,9 +76,15 @@ jobs:
         with:
           context: ./backend
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:${{ steps.extract_version.outputs.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
 
       - name: Build and push frontend image (main)
         if: github.ref == 'refs/heads/main'
@@ -64,7 +92,13 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache,mode=max
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
 
       - name: Build and push frontend image (beta)
         if: github.ref == 'refs/heads/beta'
@@ -72,7 +106,13 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache,mode=max
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:beta
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
 
       - name: Build and push frontend image (version tag)
         if: startsWith(github.ref, 'refs/tags/v')
@@ -80,6 +120,136 @@ jobs:
         with:
           context: ./frontend-vite
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:${{ steps.extract_version.outputs.VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest 
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+
+      - name: Scan images for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+          output: 'trivy-results.txt'
+
+      - name: Start PostgreSQL for testing
+        run: |
+          # Create a network for the containers
+          docker network create cpp-test-network
+          
+          docker run -d --name postgres-test \
+            --network cpp-test-network \
+            -e POSTGRES_DB=cpp_database \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=$DB_PASSWORD \
+            postgres:15-alpine
+          
+          # Wait for PostgreSQL to be ready
+          sleep 10
+          
+          if ! docker ps | grep -q postgres-test; then
+            echo "PostgreSQL container failed to start"
+            docker logs postgres-test
+            exit 1
+          fi
+
+      - name: Smoke test backend
+        id: backend-test
+        run: |
+          # Start the backend container
+          docker run -d --name backend-test \
+            --network cpp-test-network \
+            -e DB_HOST=postgres-test \
+            -e DB_NAME=cpp_database \
+            -e DB_USER=postgres \
+            -e DB_PASSWORD=$DB_PASSWORD \
+            -e DB_PORT=5432 \
+            -p 5000:5000 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-backend:latest
+          
+          # Wait for the container to be ready
+          echo "Waiting for backend container to start..."
+          sleep 10
+          
+          # Check if container is running and get its status
+          echo "Checking backend container status..."
+          docker ps -a | grep backend-test
+          
+          if ! docker ps | grep -q backend-test; then
+            echo "Backend container failed to start"
+            docker logs backend-test
+            exit 1
+          fi
+          
+          # Test basic health endpoint
+          echo "Testing backend health endpoint..."
+          if ! curl -f http://localhost:5000/health; then
+            echo "Health check failed"
+            docker logs backend-test
+            exit 1
+          fi
+          
+          echo "Backend container is running and healthy"
+          echo "backend_ready=true" >> $GITHUB_OUTPUT
+
+      - name: Smoke test frontend
+        if: steps.backend-test.outputs.backend_ready == 'true'
+        run: |
+          # Verify backend container is still running
+          echo "Verifying backend container is still running..."
+          if ! docker ps | grep -q backend-test; then
+            echo "Backend container is not running"
+            docker ps -a
+            exit 1
+          fi
+          
+          # Start the frontend container
+          echo "Starting frontend container..."
+          docker run -d --name frontend-test \
+            --network cpp-test-network \
+            -e VITE_API_URL=http://backend-test:5000 \
+            -p 3000:3000 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/cpp-frontend:latest
+          
+          # Wait for the container to be ready
+          echo "Waiting for frontend container to start..."
+          sleep 10
+          
+          # Check if container is running and get its status
+          echo "Checking frontend container status..."
+          docker ps -a | grep frontend-test
+          
+          if ! docker ps | grep -q frontend-test; then
+            echo "Frontend container failed to start"
+            docker logs frontend-test
+            exit 1
+          fi
+          
+          # Test if the web server is responding
+          echo "Testing frontend web server..."
+          if ! curl -f http://localhost:3000; then
+            echo "Frontend server check failed"
+            docker logs frontend-test
+            exit 1
+          fi
+          
+          echo "Frontend container is running and responding"
+          
+          # Cleanup
+          echo "Cleaning up containers..."
+          docker stop frontend-test
+          docker rm frontend-test
+          docker stop backend-test
+          docker rm backend-test
+          docker stop postgres-test
+          docker rm postgres-test
+          docker network rm cpp-test-network 

@@ -16,7 +16,7 @@ jobs:
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'dependencies')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -29,7 +29,19 @@ jobs:
       - name: Get latest tag
         id: get_latest_tag
         run: |
+          # Check if any tags exist
+          if ! git describe --tags --abbrev=0 2>/dev/null; then
+            echo "No tags found. Starting with v1.0.0"
+            echo "latest_tag=v1.0.0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           LATEST_TAG=$(git describe --tags --abbrev=0)
+          # Validate tag format
+          if ! [[ $LATEST_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid tag format: $LATEST_TAG"
+            exit 1
+          fi
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Create new tag
@@ -56,13 +68,22 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           PR_TITLE="${{ github.event.pull_request.title }}"
           
+          # Create RELEASE_NOTES.md if it doesn't exist
+          if [ ! -f docs/RELEASE_NOTES.md ]; then
+            mkdir -p docs
+            echo "# Release Notes" > docs/RELEASE_NOTES.md
+          fi
+          
+          # Escape special characters in PR title
+          ESCAPED_TITLE=$(echo "$PR_TITLE" | sed 's/"/\\"/g')
+          
           # Add new section to RELEASE_NOTES.md
           cat << EOF >> docs/RELEASE_NOTES.md
           
           ## $NEW_TAG
           
           ### Security Updates
-          - "$PR_TITLE" (#$PR_NUMBER)
+          - "$ESCAPED_TITLE" (#$PR_NUMBER)
           
           EOF
           
@@ -71,8 +92,47 @@ jobs:
           git commit -m "docs: update release notes for $NEW_TAG"
           git push origin main
 
-      - name: Trigger Docker Build
+      - name: Verify Docker Build
         run: |
-          # This step is just a placeholder - the Docker build should be triggered
-          # automatically by the tag push. If it's not, we can add explicit trigger here.
-          echo "Docker build should be triggered by the new tag: ${{ steps.create_tag.outputs.new_tag }}" 
+          NEW_TAG=${{ steps.create_tag.outputs.new_tag }}
+          REPO_NAME=${{ github.repository }}
+          
+          # Wait for the Docker build workflow to start
+          echo "Waiting for Docker build workflow to start..."
+          sleep 30
+          
+          # Get the workflow run ID for the Docker build
+          WORKFLOW_RUNS=$(gh api repos/$REPO_NAME/actions/runs \
+            --jq '.workflow_runs[] | select(.head_branch=="'$NEW_TAG'") | .id')
+          
+          if [ -z "$WORKFLOW_RUNS" ]; then
+            echo "Error: Could not find Docker build workflow for tag $NEW_TAG"
+            exit 1
+          fi
+          
+          # Get the most recent run
+          WORKFLOW_RUN_ID=$(echo "$WORKFLOW_RUNS" | head -n 1)
+          
+          # Wait for the workflow to complete (max 10 minutes)
+          MAX_ATTEMPTS=20
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            STATUS=$(gh api repos/$REPO_NAME/actions/runs/$WORKFLOW_RUN_ID \
+              --jq '.conclusion')
+            
+            if [ "$STATUS" = "success" ]; then
+              echo "Docker build completed successfully"
+              exit 0
+            elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "cancelled" ]; then
+              echo "Docker build failed or was cancelled"
+              exit 1
+            fi
+            
+            echo "Docker build still in progress... (attempt $ATTEMPT of $MAX_ATTEMPTS)"
+            sleep 30
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "Error: Docker build did not complete within the timeout period"
+          exit 1 

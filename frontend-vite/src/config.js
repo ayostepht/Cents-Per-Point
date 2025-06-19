@@ -19,23 +19,35 @@ const isCustomDockerSetup = () => {
 };
 
 const getApiUrl = () => {
-  if (isDevelopment()) {
-    // Local development with Vite
-    return 'http://localhost:5001';
-  } else if (isDockerLocalhost()) {
-    // Docker running locally with standard ports
-    return 'http://localhost:5000';
-  } else if (isCustomDockerSetup()) {
-    // Custom Docker setup - assume backend is on port 5005 if frontend is on 3300
-    if (window.location.port === '3300') {
-      return `http://${window.location.hostname}:5005`;
-    }
-    // For other custom setups, try port 5000 first
-    return `http://${window.location.hostname}:5000`;
-  } else {
-    // Default production deployment
+  // Debug logging
+  console.log('VITE_API_URL from env:', import.meta.env.VITE_API_URL);
+  console.log('NODE_ENV:', import.meta.env.NODE_ENV);
+  console.log('MODE:', import.meta.env.MODE);
+  console.log('All env vars:', import.meta.env);
+  
+  // If VITE_API_URL is explicitly set, use it (highest priority)
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'http://localhost:5000') {
+    console.log('Using explicit VITE_API_URL:', import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Check if we're running in a Docker environment (not localhost)
+  const isDockerEnvironment = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  
+  if (isDockerEnvironment) {
+    // In Docker, automatically construct API URL using current hostname and default backend port
+    console.log('Detected Docker environment, using automatic API URL construction');
     return `http://${window.location.hostname}:5000`;
   }
+  
+  if (import.meta.env.MODE === 'production') {
+    console.log('Using production localhost fallback');
+    return 'http://localhost:5000';
+  }
+  
+  // For local development, use 5001
+  console.log('Using development fallback');
+  return `http://${window.location.hostname}:5001`;
 };
 
 const API_URL = getApiUrl();
@@ -43,4 +55,5 @@ const API_URL = getApiUrl();
 console.log('API URL:', API_URL); // Debug log for troubleshooting
 console.log('Window location:', window.location.hostname + ':' + window.location.port);
 
+export const API_BASE_URL = API_URL;
 export default API_URL; 

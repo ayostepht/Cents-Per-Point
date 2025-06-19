@@ -8,7 +8,7 @@ const { Pool } = pg;
 // PostgreSQL connection pool
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'postgres',
   database: process.env.DB_NAME || 'cpp_database',
   password: process.env.DB_PASSWORD || 'password',
   port: process.env.DB_PORT || 5432,
@@ -24,26 +24,56 @@ export async function getDb() {
 export async function initDb() {
   const client = await pool.connect();
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS redemptions (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        source VARCHAR(255) NOT NULL,
-        points INTEGER NOT NULL,
-        value DECIMAL(10,2) NOT NULL,
-        taxes DECIMAL(10,2) DEFAULT 0,
-        notes TEXT,
-        is_travel_credit BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    // Create indexes for better performance
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_redemptions_date ON redemptions(date);
-      CREATE INDEX IF NOT EXISTS idx_redemptions_source ON redemptions(source);
-    `);
+    // Create trips table
+    await client.query('BEGIN');
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS trips (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          image TEXT,
+          start_date DATE,
+          end_date DATE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error(`Failed to create trips table: ${error.message}`);
+    }
+
+    // Create redemptions table
+    await client.query('BEGIN');
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS redemptions (
+          id SERIAL PRIMARY KEY,
+          date DATE NOT NULL,
+          source VARCHAR(255) NOT NULL,
+          points INTEGER NOT NULL,
+          value DECIMAL(10,2) NOT NULL,
+          taxes DECIMAL(10,2) DEFAULT 0,
+          notes TEXT,
+          is_travel_credit BOOLEAN DEFAULT FALSE,
+          trip_id INTEGER REFERENCES trips(id),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error(`Failed to create redemptions table: ${error.message}`);
+    }
+
+    // Note: Indexes are now created in the schema migration process
+    // This ensures proper column existence checks before index creation
+
+  } catch (error) {
+    throw error;
   } finally {
     client.release();
   }

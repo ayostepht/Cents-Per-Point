@@ -11,5 +11,6 @@ RUN npm run build || (echo "Build failed" && exit 1)
 FROM nginx:alpine AS prod
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 3000
+ENV PORT=5173
+EXPOSE ${PORT}
 CMD ["nginx", "-g", "daemon off;"] 
