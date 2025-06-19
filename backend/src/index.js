@@ -1,5 +1,5 @@
-// Set production environment for Docker deployments
-process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+// Set development environment for Docker deployments to allow CORS from any origin
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 import express from 'express';
 import cors from 'cors';

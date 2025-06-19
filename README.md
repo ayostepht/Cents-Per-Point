@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://postgresql.org/)
 
 > A self-hosted web application to track credit card point redemptions and calculate Cents Per Point (CPP) values to optimize your rewards strategy.
 
@@ -29,95 +29,59 @@ docker-compose up -d
 
 # Open your browser
 open http://localhost:3000
+
+# Or access remotely (replace IP with your server's IP)
+open http://192.168.0.100:3000
 ```
 
-## 📦 Installation & Migration
+## 📦 Installation
 
-### New Installation
-```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
-docker-compose up -d
-```
+### SQLite Migration
+To migrate existing SQLite data:
 
-### Migrating from SQLite
-If you have existing SQLite data, follow these steps:
+1. Place your `database.sqlite` file in a `backend/data` directory
+2. Uncomment the volume lines in `docker-compose.yml`
+3. Add `ENABLE_SQLITE_MIGRATION=true` to your `.env` file
+4. Run `docker-compose up -d`
+5. Check logs: `docker-compose logs -f backend`
 
-1. **Prepare your data**
-   - Ensure your SQLite database file is named `database.sqlite`
-   - Place it in the `backend/data` directory of your project
-
-2. **Configure Docker volumes**
-   Uncomment the volume lines in `docker-compose.yml`:
-   ```yaml
-   # In backend service:
-   volumes:
-     - backend_data:/app/data  # Your volume name
-
-   # In volumes section:
-   volumes:
-     postgres_data:
-     backend_data:  # Your volume name
-   ```
-
-3. **Enable migration**
-   Add the following to your `.env` file:
-   ```bash
-   ENABLE_SQLITE_MIGRATION=true
-   ```
-
-4. **Start the application**
-   ```bash
-   docker-compose up -d
-   ```
-
-5. **Verify migration**
-   - Check the backend logs: `docker-compose logs -f backend`
-   - Look for messages like "Successfully migrated X redemptions"
-   - A backup of your SQLite database will be created as `database.sqlite.backup`
-
-6. **After successful migration**
-   - You can set `ENABLE_SQLITE_MIGRATION=false` or remove it from `.env`
-   - The application will now use PostgreSQL exclusively
-
-> **Note**: The migration process is one-way and non-destructive. Your original SQLite database remains unchanged, and a backup is created automatically.
+Migration is automatic and non-destructive (creates a backup).
 
 ## ⚙️ Configuration
 
-| Service | Default Port | Description |
-|---------|-------------|-------------|
-| Frontend | 3000 | Web interface (can be mapped to different ports) |
-| Backend | 5000 | REST API |
-| PostgreSQL | 5432 | Database |
-| Health Check | http://localhost:5000/health | Status & migration info |
+### Default Ports
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend | 3000 | http://localhost:3000 |
+| Backend API | 5000 | http://localhost:5000/health |
+| PostgreSQL | 5432 | Internal only |
 
-### Environment Variables
-Create a `.env` file in the project root with the following variables:
-
-```bash
-# Database Configuration (Required)
-DB_PASSWORD=your-secure-password        # Used by both PostgreSQL and backend services
-
-# PostgreSQL Service Configuration
-POSTGRES_DB=cpp_database               # Database name
-POSTGRES_USER=postgres                 # Database user
-POSTGRES_PASSWORD=${DB_PASSWORD}       # References DB_PASSWORD
-
-# Backend Service Configuration
-DB_HOST=postgres                       # PostgreSQL service hostname
-DB_NAME=cpp_database                   # Database name
-DB_USER=postgres                       # Database user
-DB_PASSWORD=${DB_PASSWORD}            # References DB_PASSWORD
-DB_PORT=5432                          # Database port
-
-# SQLite Migration (Optional)
-ENABLE_SQLITE_MIGRATION=true          # Only set if migrating from SQLite
+### Custom Ports
+To use different ports, edit the `ports` section in `docker-compose.yml`:
+```yaml
+ports:
+  - "8080:5000"  # Backend now accessible on port 8080
 ```
 
-> **Important**: 
-> - Set a secure `DB_PASSWORD` in your `.env` file
-> - This password is used by both PostgreSQL and backend services
-> - The default password is only for development
-> - Port mappings can be customized in docker-compose.yml if needed
+If you change the backend port, also uncomment and set `VITE_API_URL`:
+```yaml
+# In frontend service:
+environment:
+  - VITE_API_URL=http://localhost:8080  # Match your backend port
+```
+
+### Environment Variables
+**Required:** Create a `.env` file with your database password:
+```bash
+DB_PASSWORD=your-secure-password
+```
+
+**Optional:** For SQLite migration only:
+```bash
+ENABLE_SQLITE_MIGRATION=true
+```
+
+> **Remote Access:** Works automatically - access via your server's IP address (e.g., `http://192.168.0.100:3000`)
 
 ## �� API Reference
 
@@ -135,8 +99,11 @@ ENABLE_SQLITE_MIGRATION=true          # Only set if migrating from SQLite
 
 **Example:**
 ```bash
-# Export data
+# Export data (local)
 curl http://localhost:5000/api/import-export/export -o backup.csv
+
+# Export data (remote - replace with your server IP)
+curl http://192.168.0.100:5000/api/import-export/export -o backup.csv
 
 # Create redemption
 curl -X POST http://localhost:5000/api/redemptions \

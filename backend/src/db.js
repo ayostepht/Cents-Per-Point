@@ -8,7 +8,7 @@ const { Pool } = pg;
 // PostgreSQL connection pool
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'postgres',
   database: process.env.DB_NAME || 'cpp_database',
   password: process.env.DB_PASSWORD || 'password',
   port: process.env.DB_PORT || 5432,

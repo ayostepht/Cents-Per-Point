@@ -38,6 +38,8 @@ lerna-debug.log*
 # Local development Docker files
 docker-compose.local.yml
 docker-compose.dev.yml
+docker-compose.beta.yml
+docker-compose.feature-test.yml
 backend/Dockerfile.dev
 frontend-vite/Dockerfile.dev
 dev-local.sh
@@ -68,3 +70,6 @@ tmp/
 # GitHub Actions workflows
 # (Workflow YAMLs are tracked; do not store secrets in this directory)
 scripts/
+
+# AI Tools
+CLAUDE.md

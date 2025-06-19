@@ -4,59 +4,41 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-centsperpoint}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: centsperpoint
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - "5432:5432"
+    restart: unless-stopped
 
   backend:
     image: stephtanner1/cpp-backend:latest
     environment:
-      - NODE_ENV=production
-      - PORT=5001
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:-centsperpoint}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
     ports:
-      - "${BACKEND_PORT:-5001}:5001"
+      - "5000:5000"
+    # Optional: Mount SQLite data if migrating from a previous sqlite version
+    # volumes:
+    #  - backend_data:/app/data 
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5001/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   frontend:
     image: stephtanner1/cpp-frontend:latest
-    environment:
-      - VITE_API_URL=http://backend:5001
-      - PORT=${FRONTEND_PORT:-5173}
+    # Uncomment VITE_API_URL only if you change the backend port above
+    # Replace YOUR_SERVER_IP with localhost (local) or your server's IP (remote)
+    # Example: VITE_API_URL=http://192.168.0.100:8080
+    # environment:
+    #   - VITE_API_URL=http://YOUR_SERVER_IP:BACKEND_PORT
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "3000:3000"
     depends_on:
       - backend
     restart: unless-stopped
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   postgres_data:
+# backend_data: -- optional, uncomment if migrating from a previous sqlite version
