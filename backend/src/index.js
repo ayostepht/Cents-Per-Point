@@ -1,5 +1,8 @@
 // Set development environment for Docker deployments to allow CORS from any origin
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+// Force development mode if not explicitly set to production
+if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+  process.env.NODE_ENV = 'development';
+}
 
 import express from 'express';
 import cors from 'cors';
