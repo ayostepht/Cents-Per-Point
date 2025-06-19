@@ -34,11 +34,16 @@ app.use(limiter);
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://centsperpoint.com', 'https://www.centsperpoint.com']
-    : true, // Allow all origins in development
+    : true, // Allow all origins in development (Docker deployments use development mode)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true // Allow credentials (cookies, authorization headers, etc.)
 };
+
+console.log('🔧 CORS Configuration:', {
+  nodeEnv: process.env.NODE_ENV,
+  allowAllOrigins: process.env.NODE_ENV !== 'production'
+});
 
 app.use(cors(corsOptions));
 
