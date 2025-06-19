@@ -20,6 +20,7 @@ services:
   backend:
     image: stephtanner1/cpp-backend:beta
     environment:
+      NODE_ENV: development
       DB_HOST: postgres
       DB_NAME: cpp_database
       DB_USER: postgres
@@ -27,15 +28,18 @@ services:
       DB_PORT: 5432
       PORT: 5000
     ports:
-      - 5000:5000
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
   frontend:
     image: stephtanner1/cpp-frontend:beta
+    environment:
+      - VITE_API_URL=__DYNAMIC__
+      - VITE_BACKEND_PORT=${BACKEND_PORT:-5000}
     ports:
-      - 3333:3000
+      - "${FRONTEND_PORT:-3333}:3000"
     depends_on:
       - backend
     restart: unless-stopped

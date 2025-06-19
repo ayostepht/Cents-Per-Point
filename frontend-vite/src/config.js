@@ -21,12 +21,13 @@ const isCustomDockerSetup = () => {
 const getApiUrl = () => {
   // Debug logging
   console.log('VITE_API_URL from env:', import.meta.env.VITE_API_URL);
+  console.log('VITE_BACKEND_PORT from env:', import.meta.env.VITE_BACKEND_PORT);
   console.log('NODE_ENV:', import.meta.env.NODE_ENV);
   console.log('MODE:', import.meta.env.MODE);
   console.log('All env vars:', import.meta.env);
   
-  // Use VITE_API_URL if provided (for Docker/production environments)
-  if (import.meta.env.VITE_API_URL) {
+  // Use VITE_API_URL if provided and not set to __DYNAMIC__ (for Docker/production environments)
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== '__DYNAMIC__') {
     console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
@@ -36,8 +37,10 @@ const getApiUrl = () => {
   
   if (isDockerEnvironment) {
     // In Docker, the browser needs to reach the backend through the host machine
-    console.log('Detected Docker environment, using host machine backend');
-    return `http://${window.location.hostname}:5000`;
+    // Use VITE_BACKEND_PORT if provided, otherwise default to 5000
+    const backendPort = import.meta.env.VITE_BACKEND_PORT || '5000';
+    console.log('Detected Docker environment, using host machine backend on port:', backendPort);
+    return `http://${window.location.hostname}:${backendPort}`;
   }
   
   if (import.meta.env.MODE === 'production') {
