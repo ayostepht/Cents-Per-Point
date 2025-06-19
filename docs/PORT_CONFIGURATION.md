@@ -1,5 +1,7 @@
 # Port Configuration
 
+> **Updated:** This document reflects the current simplified Docker Compose configuration.
+
 This application supports flexible port configuration through environment variables. You can customize the host ports while keeping the container ports consistent.
 
 ## Environment Variables

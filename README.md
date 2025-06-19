@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://postgresql.org/)
 
 > A self-hosted web application to track credit card point redemptions and calculate Cents Per Point (CPP) values to optimize your rewards strategy.
 
@@ -22,28 +22,81 @@
 
 ## 🚀 Quick Start
 
+**Step 1:** Create a `.env` file with your database password:
 ```bash
-# Download and start
+echo "DB_PASSWORD=your-secure-password" > .env
+```
+
+**Step 2:** Download and start:
+```bash
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 docker-compose up -d
+```
 
-# Open your browser
+**Step 3:** Open your browser:
+```bash
+# Local access
 open http://localhost:3000
 
-# Or access remotely (replace IP with your server's IP)
+# Remote access (replace IP with your server's IP)
 open http://192.168.0.100:3000
 ```
 
-## 📦 Installation
+## 📦 Docker Compose Configuration
+
+### Complete docker-compose.yml
+```yaml
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: centsperpoint
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  backend:
+    image: stephtanner1/cpp-backend:latest
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5000:5000"
+    # Optional: Mount SQLite data if migrating from a previous sqlite version
+    # volumes:
+    #  - backend_data:/app/data 
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    image: stephtanner1/cpp-frontend:latest
+    # Uncomment VITE_API_URL only if you change the backend port above
+    # Replace YOUR_SERVER_IP with localhost (local) or your server's IP (remote)
+    # Example: VITE_API_URL=http://192.168.0.100:8080
+    # environment:
+    #   - VITE_API_URL=http://YOUR_SERVER_IP:BACKEND_PORT
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+# backend_data: -- optional, uncomment if migrating from a previous sqlite version
+```
 
 ### SQLite Migration
 To migrate existing SQLite data:
 
-1. Place your `database.sqlite` file in a `backend/data` directory
-2. Uncomment the volume lines in `docker-compose.yml`
-3. Add `ENABLE_SQLITE_MIGRATION=true` to your `.env` file
-4. Run `docker-compose up -d`
-5. Check logs: `docker-compose logs -f backend`
+1. Uncomment the volume lines in `docker-compose.yml` (lines marked with `# Optional`)
+2. Add `ENABLE_SQLITE_MIGRATION=true` to your `.env` file
+3. Run `docker-compose up -d`
+4. Check logs: `docker-compose logs -f backend`
 
 Migration is automatic and non-destructive (creates a backup).
 
@@ -63,12 +116,15 @@ ports:
   - "8080:5000"  # Backend now accessible on port 8080
 ```
 
-If you change the backend port, also uncomment and set `VITE_API_URL`:
+**Important:** If you change the backend port, also uncomment and set `VITE_API_URL`:
 ```yaml
 # In frontend service:
 environment:
-  - VITE_API_URL=http://localhost:8080  # Match your backend port
+  - VITE_API_URL=http://localhost:8080     # For local access
+  # - VITE_API_URL=http://192.168.0.100:8080  # For remote access
 ```
+
+> **Note:** The frontend automatically detects Docker environments and constructs API URLs, but custom backend ports require explicit `VITE_API_URL` configuration.
 
 ### Environment Variables
 **Required:** Create a `.env` file with your database password:
@@ -81,7 +137,7 @@ DB_PASSWORD=your-secure-password
 ENABLE_SQLITE_MIGRATION=true
 ```
 
-> **Remote Access:** Works automatically - access via your server's IP address (e.g., `http://192.168.0.100:3000`)
+> **Remote Access:** Works automatically via your server's IP address (e.g., `http://192.168.0.100:3000`). The frontend automatically detects the environment and constructs the correct API URLs.
 
 ## �� API Reference
 

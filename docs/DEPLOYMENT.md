@@ -5,7 +5,10 @@
 ### Fresh Installation
 
 ```bash
-# Download and start - that's it!
+# Step 1: Create environment file
+echo "DB_PASSWORD=your-secure-password" > .env
+
+# Step 2: Download and start
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 docker-compose up -d
 ```
@@ -15,17 +18,20 @@ docker-compose up -d
 If you have existing SQLite data in a Docker volume:
 
 ```bash
-# Download the compose file
+# Step 1: Create environment file with migration enabled
+cat > .env << EOF
+DB_PASSWORD=your-secure-password
+ENABLE_SQLITE_MIGRATION=true
+EOF
+
+# Step 2: Download compose file
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 
-# Edit the file to uncomment the volume lines:
-# In the backend service, uncomment:
-#   volumes:
-#     - backend_data:/app/data
-# In the volumes section, uncomment:
-#   backend_data:
+# Step 3: Edit to uncomment SQLite volume lines:
+# In backend service: uncomment volumes section
+# In volumes section: uncomment backend_data
 
-# Start with automatic migration
+# Step 4: Start with automatic migration
 docker-compose up -d
 ```
 
@@ -50,11 +56,14 @@ volumes:
 
 ### Environment Variables
 
-Create a `.env` file only if you want to change the database password:
+**Required:** Create a `.env` file with your database password:
 
 ```bash
-# Optional: Custom database password
+# Required: Database password
 DB_PASSWORD=your-secure-password
+
+# Optional: Enable SQLite migration
+ENABLE_SQLITE_MIGRATION=true
 ```
 
 ## 🔄 Migration Process
@@ -113,7 +122,10 @@ your-deployment/
 ### New Users (No Migration)
 
 ```bash
-# Download and run - no editing needed
+# Step 1: Set database password
+echo "DB_PASSWORD=$(openssl rand -base64 32)" > .env
+
+# Step 2: Download and run
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 docker-compose up -d
 ```
@@ -121,17 +133,22 @@ docker-compose up -d
 ### Existing Users (With SQLite Data)
 
 ```bash
-# Download compose file
+# Step 1: Create environment file with migration enabled
+cat > .env << EOF
+DB_PASSWORD=your-secure-password
+ENABLE_SQLITE_MIGRATION=true
+EOF
+
+# Step 2: Download compose file
 curl -o docker-compose.yml https://raw.githubusercontent.com/stephtanner1/Cost%20Per%20Point/main/docker-compose.yml
 
-# Edit to uncomment volume lines (replace 'backend_data' with your volume name):
-# Backend service volumes section
-# Volumes section backend_data entry
+# Step 3: Edit to uncomment SQLite volume lines
+# (uncomment volumes lines in backend service and volumes section)
 
-# Start with automatic migration
+# Step 4: Start with automatic migration
 docker-compose up -d
 
-# Verify migration
+# Step 5: Verify migration
 curl http://localhost:5000/health
 ```
 
