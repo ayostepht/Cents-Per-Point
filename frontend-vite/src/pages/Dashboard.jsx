@@ -103,13 +103,15 @@ const CustomPieTooltip = ({ active, payload }) => {
 
 function MetricCard({ title, value, icon }) {
   return (
-    <div className="bg-white p-3 sm:p-4 md:p-3 lg:p-6 rounded-xl shadow border border-gray-100 flex items-center gap-2 sm:gap-3 md:gap-2 lg:gap-4 min-w-0">
-      <div className="p-2 sm:p-3 md:p-2 lg:p-4 bg-gray-100 rounded-full text-base sm:text-lg md:text-base lg:text-2xl flex items-center justify-center flex-shrink-0">{icon}</div>
+    <div className="bg-white p-3 sm:p-4 md:p-2 lg:p-2.5 xl:p-4 rounded-xl shadow border border-gray-100 flex items-center gap-2 sm:gap-3 md:gap-2 lg:gap-2.5 xl:gap-4 min-w-0">
+      <div className="p-2 sm:p-3 md:p-1.5 lg:p-1.5 xl:p-3 bg-gray-100 rounded-full text-base sm:text-lg md:text-base lg:text-base xl:text-lg flex items-center justify-center flex-shrink-0" style={{ minWidth: 28, minHeight: 28 }}>
+        <span style={{ fontSize: '1rem' }} className="md:text-base lg:text-base xl:text-lg">{icon}</span>
+      </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm md:text-xs lg:text-sm text-gray-500 font-medium mb-1 leading-tight" title={title}>
+        <p className="text-xs sm:text-sm md:text-xs lg:text-xs xl:text-sm text-gray-500 font-medium mb-1 leading-tight" title={title}>
           <span className="block truncate">{title}</span>
         </p>
-        <p className="text-sm sm:text-lg md:text-base lg:text-2xl xl:text-3xl font-extrabold text-gray-900 break-words leading-tight">{value}</p>
+        <p className="text-sm sm:text-lg md:text-base lg:text-base xl:text-lg 2xl:text-2xl font-extrabold text-gray-900 break-words leading-tight">{value}</p>
       </div>
     </div>
   );
@@ -295,12 +297,12 @@ export default function Dashboard() {
         </div>
         {/* Summary Statistics Card */}
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-8 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
-            <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
             <MetricCard title="Total Value Redeemed" value={<><span className="hidden lg:inline">{usd(totalValue)}</span><span className="hidden sm:inline lg:hidden">{formatMediumCurrency(totalValue)}</span><span className="sm:hidden">{formatCompactCurrency(totalValue)}</span></>} icon={<span className="text-green-500">$</span>} />
-            <MetricCard title="Total Points Redeemed" value={<><span className="hidden lg:inline">{totalPoints.toLocaleString()}</span><span className="hidden sm:inline lg:hidden">{formatMediumNumber(totalPoints)}</span><span className="sm:hidden">{formatCompactNumber(totalPoints)}</span></>} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
-            <MetricCard title="Total Redemptions" value={filtered.length} icon={<span className="text-orange-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>} />
-            <MetricCard title="Total Trips" value={trips.length} icon={<span className="text-cyan-500"><Plane size={24} /></span>} />
+            <MetricCard title="Total Points Redeemed" value={<><span className="hidden lg:inline">{totalPoints.toLocaleString()}</span><span className="hidden sm:inline lg:hidden">{formatMediumNumber(totalPoints)}</span><span className="sm:hidden">{formatCompactNumber(totalPoints)}</span></>} icon={<span className="text-purple-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
+            <MetricCard title="Total Redemptions" value={filtered.length} icon={<span className="text-orange-500"><svg width="18" height="18" className="xl:w-5 xl:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>} />
+            <MetricCard title="Total Trips" value={trips.length} icon={<span className="text-cyan-500"><Plane size={18} className="xl:w-5 xl:h-5" /></span>} />
           </div>
         </div>
 
