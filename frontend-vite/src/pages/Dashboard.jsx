@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
-import { useNavigate } from 'react-router-dom';
 import API_URL from '../config';
 import { MultiSelect } from 'react-multi-select-component';
 import { Plane } from 'lucide-react';
@@ -74,30 +73,6 @@ const formatDateTick = (tickItem, index, ticks) => {
   return '';
 };
 
-// Custom label for pie chart with better positioning
-const renderCustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }) => {
-  if (percent < 0.05) return null; // Don't show labels for slices less than 5%
-  
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      fontSize="12"
-      fontWeight="bold"
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
 // Custom tooltip for pie chart with Type, %, Amount
 const CustomPieTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -128,13 +103,13 @@ const CustomPieTooltip = ({ active, payload }) => {
 
 function MetricCard({ title, value, icon }) {
   return (
-    <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-xl shadow border border-gray-100 flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0">
-      <div className="p-2 sm:p-3 lg:p-4 bg-gray-100 rounded-full text-base sm:text-lg lg:text-2xl flex items-center justify-center flex-shrink-0">{icon}</div>
+    <div className="bg-white p-3 sm:p-4 md:p-3 lg:p-6 rounded-xl shadow border border-gray-100 flex items-center gap-2 sm:gap-3 md:gap-2 lg:gap-4 min-w-0">
+      <div className="p-2 sm:p-3 md:p-2 lg:p-4 bg-gray-100 rounded-full text-base sm:text-lg md:text-base lg:text-2xl flex items-center justify-center flex-shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm lg:text-sm text-gray-500 font-medium mb-1 leading-tight" title={title}>
+        <p className="text-xs sm:text-sm md:text-xs lg:text-sm text-gray-500 font-medium mb-1 leading-tight" title={title}>
           <span className="block truncate">{title}</span>
         </p>
-        <p className="text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-extrabold text-gray-900 break-words leading-tight">{value}</p>
+        <p className="text-sm sm:text-lg md:text-base lg:text-2xl xl:text-3xl font-extrabold text-gray-900 break-words leading-tight">{value}</p>
       </div>
     </div>
   );
@@ -142,10 +117,8 @@ function MetricCard({ title, value, icon }) {
 
 export default function Dashboard() {
   const [redemptions, setRedemptions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ source: [], dateFrom: '', dateTo: '', trip: [] });
   const [trips, setTrips] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -154,8 +127,7 @@ export default function Dashboard() {
     ]).then(([redemptionsRes, tripsRes]) => {
       setRedemptions(redemptionsRes.data);
       setTrips(tripsRes.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {/* setLoading(false); */});
   }, []);
 
   // Data prep
@@ -244,7 +216,7 @@ export default function Dashboard() {
   const uniqueSources = Array.from(new Set(filtered.map(r => r.source))).filter(Boolean);
   const allDates = Array.from(new Set(filtered.map(r => r.date))).sort();
   const sourceCumulatives = {};
-  uniqueSources.forEach((src, i) => {
+  uniqueSources.forEach((src) => {
     let cum = 0;
     sourceCumulatives[src] = allDates.map(date => {
       const pts = filtered.filter(r => r.source === src && r.date === date).reduce((sum, r) => sum + (Number(r.points) || 0), 0);
@@ -252,37 +224,7 @@ export default function Dashboard() {
       return { date, [src]: cum };
     });
   });
-  const mergedCumulatives = allDates.map(date => {
-    const entry = { date };
-    uniqueSources.forEach(src => {
-      const found = sourceCumulatives[src].find(d => d.date === date);
-      entry[src] = found ? found[src] : null;
-    });
-    return entry;
-  });
 
-  const bySource = Object.values(filtered.reduce((acc, r) => {
-    if (!acc[r.source]) acc[r.source] = { source: r.source, count: 0, cppSum: 0, cppCount: 0 };
-    acc[r.source].count += 1;
-    const cpp = r.points > 0 ? ((r.value - (r.taxes || 0)) / r.points) * 100 : null;
-    if (cpp !== null && !isNaN(cpp)) {
-      acc[r.source].cppSum += cpp;
-      acc[r.source].cppCount += 1;
-    }
-    return acc;
-  }, {}));
-
-  const topSources = [...bySource].sort((a, b) => b.count - a.count).slice(0, 3);
-
-  const avgCppBySource = bySource.map((s, i) => ({
-    source: s.source,
-    avgCpp: s.cppCount ? s.cppSum / s.cppCount : null,
-    fill: COLORS[i % COLORS.length]
-  })).filter(s => s.avgCpp !== null && !isNaN(s.avgCpp));
-
-  const topRedemptions = [...filtered].sort((a, b) => b.value - a.value).slice(0, 5);
-
-  // Best and worst redemptions
   const bestRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
   const worstRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
 
@@ -353,7 +295,7 @@ export default function Dashboard() {
         </div>
         {/* Summary Statistics Card */}
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-8 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
             <MetricCard title="Overall Average CPP" value={avgCpp !== null ? avgCpp.toFixed(2) + ' ¢' : '--'} icon={<span className="text-blue-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>} />
             <MetricCard title="Total Value Redeemed" value={<><span className="hidden lg:inline">{usd(totalValue)}</span><span className="hidden sm:inline lg:hidden">{formatMediumCurrency(totalValue)}</span><span className="sm:hidden">{formatCompactCurrency(totalValue)}</span></>} icon={<span className="text-green-500">$</span>} />
             <MetricCard title="Total Points Redeemed" value={<><span className="hidden lg:inline">{totalPoints.toLocaleString()}</span><span className="hidden sm:inline lg:hidden">{formatMediumNumber(totalPoints)}</span><span className="sm:hidden">{formatCompactNumber(totalPoints)}</span></>} icon={<span className="text-purple-500"><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span>} />
