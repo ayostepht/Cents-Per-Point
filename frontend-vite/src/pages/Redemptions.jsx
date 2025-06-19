@@ -60,7 +60,9 @@ export default function Redemptions() {
   const [cppRange, setCppRange] = useState([0, 10]);
   const [trips, setTrips] = useState([]);
   const [addingTripInline, setAddingTripInline] = useState(false);
-  const [newTrip, setNewTrip] = useState({ name: '', description: '' });
+  const [newTripName, setNewTripName] = useState('');
+  const [editingTripInline, setEditingTripInline] = useState(false);
+  const [editNewTripName, setEditNewTripName] = useState('');
   const CPP_MIN = 0;
   const CPP_MAX = 10;
 
@@ -134,23 +136,64 @@ export default function Redemptions() {
     });
   };
 
+  const handleEditTripDropdownChange = (e) => {
+    if (e.target.value === '__add_new__') {
+      setEditingTripInline(true);
+      setEditForm(prev => ({ ...prev, trip_id: null }));
+      setEditNewTripName('');
+    } else {
+      setEditingTripInline(false);
+      setEditNewTripName('');
+      setEditForm(prev => ({ ...prev, trip_id: e.target.value ? Number(e.target.value) : null }));
+    }
+  };
+
   const handleEditSave = async id => {
-    await axios.put(`${API_URL}/api/redemptions/${id}`, {
-      date: editForm.date,
-      source: editForm.source,
-      points: editForm.is_travel_credit ? 0 : Number(editForm.points),
-      value: Number(editForm.value),
-      taxes: Number(editForm.taxes),
-      notes: editForm.notes,
-      is_travel_credit: editForm.is_travel_credit,
-      trip_id: editForm.trip_id
-    });
-    setEditingId(null);
-    fetchRedemptions();
+    // Check if creating new trip and validate
+    if (editingTripInline && !editNewTripName.trim()) {
+      alert('Please enter a name for the new trip or select an existing trip.');
+      return;
+    }
+
+    try {
+      let tripId = editForm.trip_id;
+      
+      // If adding a new trip, create it first
+      if (editingTripInline && editNewTripName.trim()) {
+        const tripResponse = await axios.post(`${API_URL}/api/trips`, {
+          name: editNewTripName.trim(),
+          description: ''
+        });
+        tripId = tripResponse.data.id;
+      }
+
+      await axios.put(`${API_URL}/api/redemptions/${id}`, {
+        date: editForm.date,
+        source: editForm.source,
+        points: editForm.is_travel_credit ? 0 : Number(editForm.points),
+        value: Number(editForm.value),
+        taxes: Number(editForm.taxes),
+        notes: editForm.notes,
+        is_travel_credit: editForm.is_travel_credit,
+        trip_id: tripId
+      });
+      
+      setEditingId(null);
+      setEditingTripInline(false);
+      setEditNewTripName('');
+      // Refresh both redemptions and trips lists to ensure new data is shown
+      await fetchRedemptions();
+      await fetchTrips();
+    } catch (error) {
+      console.error('Error saving redemption:', error);
+      alert('Error saving redemption: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   const handleEditCancel = () => {
     setEditingId(null);
+    setEditingTripInline(false);
+    setEditNewTripName('');
   };
 
   const handleAddChange = e => {
@@ -175,14 +218,36 @@ export default function Redemptions() {
   const isPointsValid = addForm.is_travel_credit || (!addForm.is_travel_credit && Number(addForm.points) > 0);
   const isAddValid = missingFields.length === 0 && isPointsValid;
 
+  // Validation for edit form
+  const editMissingFields = requiredFields.filter(f => !editForm[f.key]);
+  const isEditPointsValid = editForm.is_travel_credit || (!editForm.is_travel_credit && Number(editForm.points) > 0);
+  const isEditValid = editMissingFields.length === 0 && isEditPointsValid;
+
   const handleAddSave = async () => {
     if (!isAddValid) {
       alert('Please complete the following required fields: ' + missingFields.map(f => f.label).join(', '));
       return;
     }
+
+    // Check if creating new trip and validate
+    if (addingTripInline && !newTripName.trim()) {
+      alert('Please enter a name for the new trip or select an existing trip.');
+      return;
+    }
     
     try {
-      const response = await axios.post(`${API_URL}/api/redemptions`, {
+      let tripId = addForm.trip_id;
+      
+      // If adding a new trip, create it first
+      if (addingTripInline && newTripName.trim()) {
+        const tripResponse = await axios.post(`${API_URL}/api/trips`, {
+          name: newTripName.trim(),
+          description: ''
+        });
+        tripId = tripResponse.data.id;
+      }
+      
+      const redemptionData = {
         date: addForm.date,
         source: addForm.source,
         points: addForm.is_travel_credit ? 0 : Number(addForm.points),
@@ -190,12 +255,18 @@ export default function Redemptions() {
         taxes: Number(addForm.taxes),
         notes: addForm.notes,
         is_travel_credit: addForm.is_travel_credit,
-        trip_id: addForm.trip_id
-      });
+        trip_id: tripId
+      };
+      
+      const response = await axios.post(`${API_URL}/api/redemptions`, redemptionData);
       
       setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
       setAdding(false);
-      fetchRedemptions();
+      setAddingTripInline(false);
+      setNewTripName('');
+      // Refresh both redemptions and trips lists to ensure new data is shown
+      await fetchRedemptions();
+      await fetchTrips();
     } catch (error) {
       console.error('Error saving redemption:', error);
       alert('Error saving redemption: ' + (error.response?.data?.message || error.message));
@@ -205,6 +276,8 @@ export default function Redemptions() {
   const handleAddCancel = () => {
     setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
     setAdding(false);
+    setAddingTripInline(false);
+    setNewTripName('');
   };
 
   // Prepare data with cpp calculated
@@ -275,24 +348,14 @@ export default function Redemptions() {
     if (e.target.value === '__add_new__') {
       setAddingTripInline(true);
       setAddForm(prev => ({ ...prev, trip_id: null }));
+      setNewTripName('');
     } else {
       setAddingTripInline(false);
+      setNewTripName('');
       setAddForm(prev => ({ ...prev, trip_id: e.target.value ? Number(e.target.value) : null }));
     }
   };
 
-  const handleAddTripInline = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(`${API_URL}/api/trips`, newTrip);
-      await fetchTrips();
-      setAddForm(prev => ({ ...prev, trip_id: response.data.id }));
-      setAddingTripInline(false);
-      setNewTrip({ name: '', description: '' });
-    } catch (error) {
-      console.error('Error adding trip:', error);
-    }
-  };
 
   return (
     <div className="w-full">
@@ -431,10 +494,31 @@ export default function Redemptions() {
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {trips.find(t => t.id === r.trip_id)?.name || '-'}
+                    <td>
+                      <div>
+                        <select 
+                          value={editingTripInline ? '__add_new__' : editForm.trip_id || ''} 
+                          onChange={handleEditTripDropdownChange} 
+                          className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        >
+                          <option value="">No Trip</option>
+                          {trips.map(trip => (
+                            <option key={trip.id} value={trip.id}>{trip.name}</option>
+                          ))}
+                          <option value="__add_new__">Add new trip…</option>
+                        </select>
+                        {editingTripInline && (
+                          <input
+                            type="text"
+                            placeholder="Enter new trip name"
+                            value={editNewTripName}
+                            onChange={e => setEditNewTripName(e.target.value)}
+                            className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100 mt-1"
+                          />
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={r.notes}>{r.notes || '-'}</td>
+                    <td><input type="text" name="notes" value={editForm.notes} onChange={handleEditChange} className="border border-gray-300 rounded-lg p-2 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex gap-2 items-center">
                       <button onClick={() => handleEditSave(r.id)} className="text-green-600" title="Save"><Save size={18} /></button>
                       <button onClick={handleEditCancel} className="text-gray-500">Cancel</button>
@@ -522,58 +606,62 @@ export default function Redemptions() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Trip</label>
             <div>
-              <select
-                value={addingTripInline ? '__add_new__' : addForm.trip_id || ''}
-                onChange={handleTripDropdownChange}
-                className="w-full p-2 border rounded"
-                disabled={addingTripInline}
-              >
-                <option value="">No Trip</option>
-                {trips.map(trip => (
-                  <option key={trip.id} value={trip.id}>
-                    {trip.name}
-                  </option>
-                ))}
-                <option value="__add_new__">Add new trip…</option>
-              </select>
-              {addingTripInline && (
-                <form onSubmit={handleAddTripInline} className="mt-2 space-y-2 bg-gray-50 p-3 rounded">
-                  <input
-                    type="text"
-                    placeholder="Trip Name"
-                    value={newTrip.name}
-                    onChange={e => setNewTrip({ ...newTrip, name: e.target.value })}
+              {editingId !== null ? (
+                <div>
+                  <select
+                    value={editingTripInline ? '__add_new__' : editForm.trip_id || ''}
+                    onChange={handleEditTripDropdownChange}
                     className="w-full p-2 border rounded"
-                    required
-                  />
-                  <textarea
-                    placeholder="Description (optional)"
-                    value={newTrip.description}
-                    onChange={e => setNewTrip({ ...newTrip, description: e.target.value })}
+                  >
+                    <option value="">No Trip</option>
+                    {trips.map(trip => (
+                      <option key={trip.id} value={trip.id}>
+                        {trip.name}
+                      </option>
+                    ))}
+                    <option value="__add_new__">Add new trip…</option>
+                  </select>
+                  {editingTripInline && (
+                    <input
+                      type="text"
+                      placeholder="Enter new trip name"
+                      value={editNewTripName}
+                      onChange={e => setEditNewTripName(e.target.value)}
+                      className="w-full p-2 border rounded mt-2"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <select
+                    value={addingTripInline ? '__add_new__' : addForm.trip_id || ''}
+                    onChange={handleTripDropdownChange}
                     className="w-full p-2 border rounded"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => { setAddingTripInline(false); setNewTrip({ name: '', description: '' }); }}
-                      className="px-4 py-2 border rounded"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </form>
+                  >
+                    <option value="">No Trip</option>
+                    {trips.map(trip => (
+                      <option key={trip.id} value={trip.id}>
+                        {trip.name}
+                      </option>
+                    ))}
+                    <option value="__add_new__">Add new trip…</option>
+                  </select>
+                  {addingTripInline && (
+                    <input
+                      type="text"
+                      placeholder="Enter new trip name"
+                      value={newTripName}
+                      onChange={e => setNewTripName(e.target.value)}
+                      className="w-full p-2 border rounded mt-2"
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>
           <div className="flex gap-3 mt-6 justify-end">
             <button type="button" onClick={editingId !== null ? handleEditCancel : handleAddCancel} className="px-5 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold">Cancel</button>
-            <button type="submit" disabled={!isAddValid} className={"px-5 py-3 rounded-xl font-bold " + (isAddValid ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>{editingId !== null ? 'Save' : 'Add Redemption'}</button>
+            <button type="submit" disabled={editingId !== null ? !isEditValid : !isAddValid} className={"px-5 py-3 rounded-xl font-bold " + ((editingId !== null ? isEditValid : isAddValid) ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed')}>{editingId !== null ? 'Save' : 'Add Redemption'}</button>
           </div>
         </form>
       </Modal>
