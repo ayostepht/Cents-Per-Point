@@ -14,7 +14,11 @@ services:
   backend:
     image: stephtanner1/cpp-backend:latest
     environment:
-      - DB_PASSWORD=${DB_PASSWORD}
+      DB_HOST: postgres
+      DB_NAME: centsperpoint
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
     ports:
       - "5000:5000"
     # Optional: Mount SQLite data if migrating from a previous sqlite version
