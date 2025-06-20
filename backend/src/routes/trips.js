@@ -7,8 +7,14 @@ import fs from 'fs';
 const router = express.Router();
 
 // Set up multer for image uploads
-const uploadDir = path.resolve('uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const uploadDir = join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
