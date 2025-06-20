@@ -18,15 +18,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Serve uploads statically
-router.use('/uploads', express.static(uploadDir));
+// Static file serving is handled by main server at /uploads
 
 // Upload image for a trip
 router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
   const pool = await getDb();
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file uploaded' });
-  const imageUrl = `/api/trips/uploads/${file.filename}`;
+  const imageUrl = `/uploads/${file.filename}`;
   await pool.query('UPDATE trips SET image = $1 WHERE id = $2', [imageUrl, req.params.id]);
   res.json({ imageUrl });
 });
