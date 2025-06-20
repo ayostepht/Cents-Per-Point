@@ -289,7 +289,7 @@ const Trips = () => {
           >
             {trip.image ? (
               <img
-                src={trip.image}
+                src={`${API_BASE_URL}${trip.image}`}
                 alt={trip.name}
                 className="w-full h-40 object-cover rounded-lg mb-4 bg-gray-100"
                 style={{ background: '#f3f4f6' }}
