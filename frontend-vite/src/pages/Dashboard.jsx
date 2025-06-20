@@ -227,8 +227,9 @@ export default function Dashboard() {
     });
   });
 
-  const bestRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
-  const worstRedemption = filtered.length ? filtered.reduce((a, b) => (a.points > 0 && ((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
+  const validRedemptions = filtered.filter(r => r.points > 0);
+  const bestRedemption = validRedemptions.length ? validRedemptions.reduce((a, b) => (((a.value - (a.taxes || 0)) / a.points) > ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
+  const worstRedemption = validRedemptions.length ? validRedemptions.reduce((a, b) => (((a.value - (a.taxes || 0)) / a.points) < ((b.value - (b.taxes || 0)) / b.points) ? a : b)) : null;
 
   const recentRedemptions = filtered.slice(0, 5);
 
