@@ -18,9 +18,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5000:5000"
-    # Optional: Mount SQLite data if migrating from a previous sqlite version
-    # volumes:
-    #  - backend_data:/app/data 
+    volumes:
+      # Mount uploads directory to persist trip images
+      - backend_uploads:/app/uploads
+      # Optional: Mount SQLite data if migrating from a previous sqlite version  
+      # - backend_data:/app/data
     depends_on:
       - postgres
     restart: unless-stopped
@@ -40,4 +42,5 @@ services:
 
 volumes:
   postgres_data:
+  backend_uploads:
 # backend_data: -- optional, uncomment if migrating from a previous sqlite version
