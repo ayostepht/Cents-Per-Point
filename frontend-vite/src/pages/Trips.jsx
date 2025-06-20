@@ -350,6 +350,11 @@ const Trips = () => {
                 alt={trip.name}
                 className="w-full h-40 object-cover rounded-lg mb-4 bg-gray-100"
                 style={{ background: '#f3f4f6' }}
+                onError={(e) => {
+                  console.error('Image failed to load:', e.target.src);
+                  console.error('API_BASE_URL:', API_BASE_URL);
+                  console.error('trip.image:', trip.image);
+                }}
               />
             ) : (
               <div className="w-full h-40 flex items-center justify-center rounded-lg mb-4 bg-gray-100" style={{ background: '#f3f4f6' }}>
