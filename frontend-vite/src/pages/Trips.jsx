@@ -18,7 +18,7 @@ const Trips = () => {
   const [isAddingTrip, setIsAddingTrip] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
   const [isAddingRedemption, setIsAddingRedemption] = useState(false);
-  const [newTrip, setNewTrip] = useState({ name: '', description: '', image: '' });
+  const [newTrip, setNewTrip] = useState({ name: '', description: '', image: '', start_date: '', end_date: '' });
   const [newTripImageFile, setNewTripImageFile] = useState(null);
   const [error, setError] = useState(null);
   const [dateFilters, setDateFilters] = useState({ startFrom: '', endTo: '' });
@@ -86,7 +86,9 @@ const Trips = () => {
       const tripData = {
         name: newTrip.name,
         description: newTrip.description,
-        image: ''
+        image: '',
+        start_date: newTrip.start_date || null,
+        end_date: newTrip.end_date || null
       };
       const response = await fetch(`${API_BASE_URL}/api/trips`, {
         method: 'POST',
@@ -118,7 +120,7 @@ const Trips = () => {
       
       await fetchTrips();
       setIsAddingTrip(false);
-      setNewTrip({ name: '', description: '', image: '' });
+      setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
       setNewTripImageFile(null);
     } catch (err) {
       setError(err.message);
@@ -387,7 +389,7 @@ const Trips = () => {
               onClick={() => {
                 setIsAddingTrip(false);
                 setIsEditingTrip(false);
-                setNewTrip({ name: '', description: '', image: '' });
+                setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
                 setNewTripImageFile(null);
               }}
               className="absolute top-3 right-4 text-2xl text-gray-400 hover:text-gray-600"
@@ -414,6 +416,24 @@ const Trips = () => {
                 />
               </div>
               <div className="mb-4">
+                <label className="block font-semibold mb-1 text-gray-700">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  value={newTrip.start_date}
+                  onChange={e => setNewTrip(prev => ({ ...prev, start_date: e.target.value }))}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block font-semibold mb-1 text-gray-700">End Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  value={newTrip.end_date}
+                  onChange={e => setNewTrip(prev => ({ ...prev, end_date: e.target.value }))}
+                />
+              </div>
+              <div className="mb-4">
                 <label className="block font-semibold mb-1 text-gray-700">Trip Image</label>
                 <input
                   type="file"
@@ -431,7 +451,7 @@ const Trips = () => {
                   onClick={() => {
                     setIsAddingTrip(false);
                     setIsEditingTrip(false);
-                    setNewTrip({ name: '', description: '', image: '' });
+                    setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
                     setNewTripImageFile(null);
                   }}
                   className="px-4 py-2 border rounded"

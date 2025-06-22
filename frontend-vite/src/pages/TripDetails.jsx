@@ -16,6 +16,13 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString();
 };
 
+const formatDateForInput = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toISOString().slice(0, 10);
+};
+
 const formatDateRange = (start, end) => {
   const opts = { year: 'numeric', month: 'short', day: 'numeric' };
   const s = start ? new Date(start) : null;
@@ -60,8 +67,8 @@ export default function TripDetails() {
         name: tripData.name || '',
         description: tripData.description || '',
         image: tripData.image || '',
-        start_date: tripData.start_date || '',
-        end_date: tripData.end_date || '',
+        start_date: formatDateForInput(tripData.start_date),
+        end_date: formatDateForInput(tripData.end_date),
       });
       const statsRes = await fetch(`${API_BASE_URL}/api/trips/${id}/stats`);
       setStats(await statsRes.json());
