@@ -7,8 +7,14 @@ import fs from 'fs';
 const router = express.Router();
 
 // Set up multer for image uploads
-const uploadDir = path.resolve('uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
@@ -18,15 +24,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Serve uploads statically
-router.use('/uploads', express.static(uploadDir));
+// Static file serving is handled by main server at /uploads
 
 // Upload image for a trip
 router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
   const pool = await getDb();
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file uploaded' });
-  const imageUrl = `/api/trips/uploads/${file.filename}`;
+  const imageUrl = `/uploads/${file.filename}`;
   await pool.query('UPDATE trips SET image = $1 WHERE id = $2', [imageUrl, req.params.id]);
   res.json({ imageUrl });
 });

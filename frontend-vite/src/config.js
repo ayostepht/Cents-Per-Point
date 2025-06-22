@@ -13,8 +13,8 @@ const isDockerLocalhost = () => {
 };
 
 const isCustomDockerSetup = () => {
-  // Custom Docker setup with non-standard ports (like 3300:3000)
-  return window.location.port === '3300' || 
+  // Custom Docker setup with non-standard ports (like 3300:3000, 3333:3000)
+  return window.location.port === '3300' || window.location.port === '3333' ||
          (window.location.hostname !== 'localhost' && window.location.port === '3000');
 };
 

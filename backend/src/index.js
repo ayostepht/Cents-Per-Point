@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
 import csv from 'csv-parser';
-import { createReadStream } from 'fs';
+import { createReadStream, existsSync, mkdirSync } from 'fs';
 import { initDb, closeDb, getDb } from './db.js';
 import { migrateSchema, migrateFromSqlite, getSqliteMigrationStatus } from './migration.js';
 import redemptionsRouter from './routes/redemptions.js';
@@ -54,12 +54,14 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(join(__dirname, 'uploads')));
+app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
 // Configure multer for file uploads
+const uploadDir = join(__dirname, '..', 'uploads');
+if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, join(__dirname, 'uploads'));
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname);

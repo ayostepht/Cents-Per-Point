@@ -16,6 +16,13 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString();
 };
 
+const formatDateForInput = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toISOString().slice(0, 10);
+};
+
 const formatDateRange = (start, end) => {
   const opts = { year: 'numeric', month: 'short', day: 'numeric' };
   const s = start ? new Date(start) : null;
@@ -60,8 +67,8 @@ export default function TripDetails() {
         name: tripData.name || '',
         description: tripData.description || '',
         image: tripData.image || '',
-        start_date: tripData.start_date || '',
-        end_date: tripData.end_date || '',
+        start_date: formatDateForInput(tripData.start_date),
+        end_date: formatDateForInput(tripData.end_date),
       });
       const statsRes = await fetch(`${API_BASE_URL}/api/trips/${id}/stats`);
       setStats(await statsRes.json());
@@ -190,7 +197,16 @@ export default function TripDetails() {
       <button onClick={() => navigate('/trips')} className="mb-6 text-blue-600 hover:underline">&larr; Back to Trips</button>
       <div className="flex flex-col md:flex-row gap-8 mb-8 items-center md:items-start">
         {trip.image ? (
-          <img src={trip.image} alt={trip.name} className="w-64 h-40 object-cover rounded-lg bg-gray-100" />
+          <img 
+            src={`${API_BASE_URL}${trip.image}`} 
+            alt={trip.name} 
+            className="w-64 h-40 object-cover rounded-lg bg-gray-100"
+            onError={(e) => {
+              console.error('Image failed to load:', e.target.src);
+              console.error('API_BASE_URL:', API_BASE_URL);
+              console.error('trip.image:', trip.image);
+            }}
+          />
         ) : (
           <div className="w-64 h-40 flex items-center justify-center rounded-lg bg-gray-100"><Plane size={64} className="text-blue-400" /></div>
         )}

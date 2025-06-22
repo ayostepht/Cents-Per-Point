@@ -18,7 +18,8 @@ const Trips = () => {
   const [isAddingTrip, setIsAddingTrip] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
   const [isAddingRedemption, setIsAddingRedemption] = useState(false);
-  const [newTrip, setNewTrip] = useState({ name: '', description: '', image: '' });
+  const [newTrip, setNewTrip] = useState({ name: '', description: '', image: '', start_date: '', end_date: '' });
+  const [newTripImageFile, setNewTripImageFile] = useState(null);
   const [error, setError] = useState(null);
   const [dateFilters, setDateFilters] = useState({ startFrom: '', endTo: '' });
   const [sort, setSort] = useState({ key: 'start_date', dir: 'asc' });
@@ -81,15 +82,46 @@ const Trips = () => {
   const handleAddTrip = async (e) => {
     e.preventDefault();
     try {
+      // First create the trip without image
+      const tripData = {
+        name: newTrip.name,
+        description: newTrip.description,
+        image: '',
+        start_date: newTrip.start_date || null,
+        end_date: newTrip.end_date || null
+      };
       const response = await fetch(`${API_BASE_URL}/api/trips`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTrip),
+        body: JSON.stringify(tripData),
       });
       if (!response.ok) throw new Error('Failed to add trip');
+      
+      const createdTrip = await response.json();
+      
+      // Upload image if provided
+      if (newTripImageFile) {
+        const formData = new FormData();
+        formData.append('image', newTripImageFile);
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/trips/${createdTrip.id}/upload-image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        // Update trip with image URL
+        await fetch(`${API_BASE_URL}/api/trips/${createdTrip.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...tripData,
+            image: uploadRes.data.imageUrl
+          }),
+        });
+      }
+      
       await fetchTrips();
       setIsAddingTrip(false);
-      setNewTrip({ name: '', description: '', image: '' });
+      setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
+      setNewTripImageFile(null);
     } catch (err) {
       setError(err.message);
     }
@@ -99,16 +131,36 @@ const Trips = () => {
   const handleEditTrip = async (e) => {
     e.preventDefault();
     try {
+      let imageUrl = selectedTrip.image;
+      
+      // Upload new image if provided
+      if (newTripImageFile) {
+        const formData = new FormData();
+        formData.append('image', newTripImageFile);
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/trips/${selectedTrip.id}/upload-image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.imageUrl;
+      }
+      
+      const tripData = {
+        name: newTrip.name,
+        description: newTrip.description,
+        image: imageUrl
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/trips/${selectedTrip.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTrip),
+        body: JSON.stringify(tripData),
       });
       if (!response.ok) throw new Error('Failed to update trip');
+      
       await fetchTrips();
       setIsEditingTrip(false);
       setNewTrip({ name: '', description: '', image: '' });
-      setSelectedTrip({ ...selectedTrip, ...newTrip });
+      setNewTripImageFile(null);
+      setSelectedTrip({ ...selectedTrip, ...tripData });
     } catch (err) {
       setError(err.message);
     }
@@ -134,7 +186,13 @@ const Trips = () => {
   // Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      setNewTripImageFile(null);
+      setNewTrip((prev) => ({ ...prev, image: '' }));
+      return;
+    }
+    setNewTripImageFile(file);
+    // Show preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setNewTrip((prev) => ({ ...prev, image: reader.result }));
@@ -274,6 +332,7 @@ const Trips = () => {
           onClick={() => {
             setIsAddingTrip(true);
             setNewTrip({ name: '', description: '', image: '' });
+            setNewTripImageFile(null);
           }}
         >
           Add Trip
@@ -289,10 +348,15 @@ const Trips = () => {
           >
             {trip.image ? (
               <img
-                src={trip.image}
+                src={`${API_BASE_URL}${trip.image}`}
                 alt={trip.name}
                 className="w-full h-40 object-cover rounded-lg mb-4 bg-gray-100"
                 style={{ background: '#f3f4f6' }}
+                onError={(e) => {
+                  console.error('Image failed to load:', e.target.src);
+                  console.error('API_BASE_URL:', API_BASE_URL);
+                  console.error('trip.image:', trip.image);
+                }}
               />
             ) : (
               <div className="w-full h-40 flex items-center justify-center rounded-lg mb-4 bg-gray-100" style={{ background: '#f3f4f6' }}>
@@ -325,7 +389,8 @@ const Trips = () => {
               onClick={() => {
                 setIsAddingTrip(false);
                 setIsEditingTrip(false);
-                setNewTrip({ name: '', description: '', image: '' });
+                setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
+                setNewTripImageFile(null);
               }}
               className="absolute top-3 right-4 text-2xl text-gray-400 hover:text-gray-600"
             >&times;</button>
@@ -351,6 +416,24 @@ const Trips = () => {
                 />
               </div>
               <div className="mb-4">
+                <label className="block font-semibold mb-1 text-gray-700">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  value={newTrip.start_date}
+                  onChange={e => setNewTrip(prev => ({ ...prev, start_date: e.target.value }))}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block font-semibold mb-1 text-gray-700">End Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  value={newTrip.end_date}
+                  onChange={e => setNewTrip(prev => ({ ...prev, end_date: e.target.value }))}
+                />
+              </div>
+              <div className="mb-4">
                 <label className="block font-semibold mb-1 text-gray-700">Trip Image</label>
                 <input
                   type="file"
@@ -368,7 +451,8 @@ const Trips = () => {
                   onClick={() => {
                     setIsAddingTrip(false);
                     setIsEditingTrip(false);
-                    setNewTrip({ name: '', description: '', image: '' });
+                    setNewTrip({ name: '', description: '', image: '', start_date: '', end_date: '' });
+                    setNewTripImageFile(null);
                   }}
                   className="px-4 py-2 border rounded"
                 >
