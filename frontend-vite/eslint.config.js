@@ -30,4 +30,19 @@ export default [
       ],
     },
   },
+  // Configuration for Node.js config files
+  {
+    files: ['*.config.js'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'module',
+    },
+  },
+  {
+    files: ['*.config.cjs'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'script',
+    },
+  },
 ]

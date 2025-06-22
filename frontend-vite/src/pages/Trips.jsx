@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { Plane } from 'lucide-react';
 import axios from 'axios';
-import { sourceOptions } from '../constants/sourceOptions';
 import { useNavigate } from 'react-router-dom';
 import { MultiSelect } from 'react-multi-select-component';
 
@@ -13,16 +12,19 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 const Trips = () => {
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
-  const [tripStats, setTripStats] = useState(null);
-  const [tripRedemptions, setTripRedemptions] = useState([]);
   const [isAddingTrip, setIsAddingTrip] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
-  const [isAddingRedemption, setIsAddingRedemption] = useState(false);
   const [newTrip, setNewTrip] = useState({ name: '', description: '', image: '', start_date: '', end_date: '' });
   const [newTripImageFile, setNewTripImageFile] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [tripStats, setTripStats] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [tripRedemptions, setTripRedemptions] = useState([]);
   const [dateFilters, setDateFilters] = useState({ startFrom: '', endTo: '' });
   const [sort, setSort] = useState({ key: 'start_date', dir: 'asc' });
+  // eslint-disable-next-line no-unused-vars
   const [addRedemptionForm, setAddRedemptionForm] = useState({
     date: todayStr(),
     source: '',
@@ -32,7 +34,6 @@ const Trips = () => {
     notes: '',
     is_travel_credit: false,
   });
-  const [addRedemptionLoading, setAddRedemptionLoading] = useState(false);
   const navigate = useNavigate();
 
   // Fetch all trips
@@ -48,6 +49,7 @@ const Trips = () => {
   };
 
   // Fetch trip statistics
+  // eslint-disable-next-line no-unused-vars
   const fetchTripStats = async (tripId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/stats`);
@@ -60,6 +62,7 @@ const Trips = () => {
   };
 
   // Fetch trip redemptions
+  // eslint-disable-next-line no-unused-vars
   const fetchTripRedemptions = async (tripId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/redemptions/trip/${tripId}`);
@@ -71,12 +74,6 @@ const Trips = () => {
     }
   };
 
-  // Handle trip selection (open modal)
-  const handleTripSelect = async (trip) => {
-    setSelectedTrip(trip);
-    await fetchTripStats(trip.id);
-    await fetchTripRedemptions(trip.id);
-  };
 
   // Handle adding a new trip
   const handleAddTrip = async (e) => {
@@ -166,22 +163,6 @@ const Trips = () => {
     }
   };
 
-  // Handle deleting a trip
-  const handleDeleteTrip = async (tripId) => {
-    if (!window.confirm('Are you sure you want to delete this trip?')) return;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete trip');
-      await fetchTrips();
-      setSelectedTrip(null);
-      setTripStats(null);
-      setTripRedemptions([]);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   // Handle image upload
   const handleImageChange = (e) => {
@@ -200,50 +181,18 @@ const Trips = () => {
     reader.readAsDataURL(file);
   };
 
-  // Add Redemption form handlers
-  const handleAddRedemptionChange = e => {
-    const { name, value, type, checked } = e.target;
-    setAddRedemptionForm(f => {
-      if (name === 'is_travel_credit') {
-        return { ...f, is_travel_credit: checked, points: checked && (!f.points || f.points === '') ? 0 : f.points };
-      }
-      return { ...f, [name]: type === 'checkbox' ? checked : value };
-    });
-  };
 
+  // eslint-disable-next-line no-unused-vars
   const requiredFields = [
     { key: 'date', label: 'Date' },
     { key: 'source', label: 'Source' },
     { key: 'value', label: 'Total Cash Value ($)' }
   ];
-  const missingFields = requiredFields.filter(f => !addRedemptionForm[f.key]);
-  const isPointsValid = addRedemptionForm.is_travel_credit || (!addRedemptionForm.is_travel_credit && Number(addRedemptionForm.points) > 0);
-  const isAddValid = missingFields.length === 0 && isPointsValid;
+  // Validation logic kept for future use
+  // const missingFields = requiredFields.filter(f => !addRedemptionForm[f.key]);
+  // const isPointsValid = addRedemptionForm.is_travel_credit || (!addRedemptionForm.is_travel_credit && Number(addRedemptionForm.points) > 0);
+  // const isAddValid = missingFields.length === 0 && isPointsValid;
 
-  const handleAddRedemption = async (e) => {
-    e.preventDefault();
-    if (!isAddValid) {
-      alert('Please complete the following required fields: ' + missingFields.map(f => f.label).join(', '));
-      return;
-    }
-    setAddRedemptionLoading(true);
-    try {
-      await axios.post(`${API_BASE_URL}/api/redemptions`, {
-        ...addRedemptionForm,
-        points: addRedemptionForm.is_travel_credit ? 0 : Number(addRedemptionForm.points),
-        value: Number(addRedemptionForm.value),
-        taxes: Number(addRedemptionForm.taxes),
-        trip_id: selectedTrip.id,
-      });
-      setIsAddingRedemption(false);
-      setAddRedemptionForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false });
-      await fetchTripRedemptions(selectedTrip.id);
-    } catch (error) {
-      alert('Error saving redemption: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setAddRedemptionLoading(false);
-    }
-  };
 
   const formatTripDateRange = (start, end) => {
     const opts = { year: '2-digit', month: 'numeric', day: 'numeric' };

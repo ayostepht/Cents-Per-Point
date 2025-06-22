@@ -10,18 +10,6 @@ import { sourceOptions } from '../constants/sourceOptions';
 
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 
-const columns = [
-  { key: 'date', label: 'Date' },
-  { key: 'source', label: 'Source' },
-  { key: 'points', label: 'Points Used' },
-  { key: 'taxes', label: 'Taxes/Fees ($)' },
-  { key: 'value', label: 'Total Cash Value ($)' },
-  { key: 'cpp', label: 'CPP' },
-  { key: 'is_travel_credit', label: 'Free Night Award/Credit' },
-  { key: 'trip', label: 'Trip' },
-  { key: 'notes', label: 'Notes' },
-  { key: 'actions', label: 'Actions' }
-];
 
 const PAGE_SIZE = 25;
 
@@ -48,6 +36,7 @@ const sourceMultiOptions = sourceOptions.flatMap(group => group.options.map(opt 
 
 export default function Redemptions() {
   const [redemptions, setRedemptions] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState({ key: 'date', dir: 'desc' });
   const [deleting, setDeleting] = useState(null);
@@ -57,7 +46,6 @@ export default function Redemptions() {
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addForm, setAddForm] = useState({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
-  const [cppRange, setCppRange] = useState([0, 10]);
   const [trips, setTrips] = useState([]);
   const [addingTripInline, setAddingTripInline] = useState(false);
   const [newTripName, setNewTripName] = useState('');
@@ -258,7 +246,7 @@ export default function Redemptions() {
         trip_id: tripId
       };
       
-      const response = await axios.post(`${API_URL}/api/redemptions`, redemptionData);
+      await axios.post(`${API_URL}/api/redemptions`, redemptionData);
       
       setAddForm({ date: todayStr(), source: '', points: '', taxes: '', value: '', notes: '', is_travel_credit: false, trip_id: null });
       setAdding(false);
@@ -291,8 +279,6 @@ export default function Redemptions() {
     return { ...r, cpp };
   });
 
-  // Unique sources for dropdown
-  const uniqueSources = Array.from(new Set(tableData.map(r => r.source))).filter(Boolean);
 
   // Filtering
   const filteredData = tableData.filter(r => {
@@ -305,7 +291,7 @@ export default function Redemptions() {
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
-    const { key, dir } = sort;
+    const { key } = sort;
     let v1 = a[key], v2 = b[key];
     if (key === 'cpp' || key === 'taxes' || key === 'value' || key === 'points') {
       v1 = Number(v1); v2 = Number(v2);
@@ -319,12 +305,8 @@ export default function Redemptions() {
   });
 
   // Pagination
-  const totalPages = Math.ceil(sortedData.length / PAGE_SIZE) || 1;
   const pagedData = sortedData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handlePageChange = newPage => {
-    setPage(newPage);
-  };
 
   useEffect(() => {
     setPage(1); // Reset to first page on filter change

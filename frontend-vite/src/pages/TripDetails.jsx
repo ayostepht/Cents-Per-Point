@@ -9,13 +9,6 @@ import { MultiSelect } from 'react-multi-select-component';
 const usd = n => n !== '' && n !== null && n !== undefined ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '';
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString();
-};
-
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
