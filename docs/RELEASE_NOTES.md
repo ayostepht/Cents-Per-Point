@@ -173,3 +173,8 @@ cd frontend-vite && npm run dev
 ---
 
 **Full Changelog**: https://github.com/ayostepht/Cents-Per-Point/compare/v0.1.0...v0.2.0 
+## v0.3.3
+
+### Security Updates
+- "chore(deps): bump multer from 2.0.1 to 2.0.2 in /backend in the npm_and_yarn group across 1 directory" (#39)
+
