@@ -15,7 +15,7 @@
     "express-rate-limit": "^7.5.0",
     "pg": "^8.13.1",
     "dotenv": "^16.4.7",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
     "csv-parser": "^3.0.0",
     "express-rate-limit": "^7.5.0"
   },
