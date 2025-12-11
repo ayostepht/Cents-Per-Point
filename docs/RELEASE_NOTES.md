@@ -178,3 +178,9 @@ cd frontend-vite && npm run dev
 ### Security Updates
 - "chore(deps): bump multer from 2.0.1 to 2.0.2 in /backend in the npm_and_yarn group across 1 directory" (#39)
 
+
+## v0.3.4
+
+### Security Updates
+- "chore(deps): bump form-data from 4.0.2 to 4.0.4 in /frontend-vite in the npm_and_yarn group across 1 directory" (#40)
+
