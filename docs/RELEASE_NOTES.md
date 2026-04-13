@@ -184,3 +184,9 @@ cd frontend-vite && npm run dev
 ### Security Updates
 - "chore(deps): bump form-data from 4.0.2 to 4.0.4 in /frontend-vite in the npm_and_yarn group across 1 directory" (#40)
 
+
+## v0.3.5
+
+### Security Updates
+- "chore(deps): bump the npm_and_yarn group across 2 directories with 5 updates" (#41)
+
